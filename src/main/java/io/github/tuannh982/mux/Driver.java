@@ -8,6 +8,7 @@ import java.sql.*;
 import java.util.Properties;
 import java.util.logging.Logger;
 
+@SuppressWarnings("java:S2176")
 public class Driver implements java.sql.Driver {
     private static final Driver INSTANCE = new Driver();
     private static volatile boolean registered = false;

@@ -948,7 +948,8 @@ public class MuxResultSet implements ResultSet {
 
     @Override
     public boolean isLast() throws SQLException {
-        return resultSets.get(resultSets.size() - 1).isLast(); // marked for delete
+        // will not be supported
+        throw new SQLException(OPERATION_NOT_SUPPORTED);
     }
 
     @Override

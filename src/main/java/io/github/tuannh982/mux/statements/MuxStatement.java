@@ -1,8 +1,8 @@
 package io.github.tuannh982.mux.statements;
 
-import io.github.tuannh982.mux.analyzer.Analyzer;
 import io.github.tuannh982.mux.connection.Constants;
 import io.github.tuannh982.mux.connection.MuxConnection;
+import io.github.tuannh982.mux.shard.analyzer.Analyzer;
 import io.github.tuannh982.mux.statements.history.ParamInvocationEntry;
 import io.github.tuannh982.mux.statements.history.ParamInvocationHistory;
 import io.github.tuannh982.mux.statements.history.ParamInvocationPlayback;
@@ -33,11 +33,13 @@ public class MuxStatement implements Statement, ParamInvocationPlayback {
 
     public MuxStatement(MuxConnection connection) {
         this.connection = connection;
+        this.analyzer = connection.getInternal().getAnalyzer();
         this.constructorType = STATEMENT_EMPTY;
     }
 
     public MuxStatement(MuxConnection connection, int resultSetType, int resultSetConcurrency) {
         this.connection = connection;
+        this.analyzer = connection.getInternal().getAnalyzer();
         this.resultSetType = resultSetType;
         this.resultSetConcurrency = resultSetConcurrency;
         this.constructorType = STATEMENT_II;
@@ -45,6 +47,7 @@ public class MuxStatement implements Statement, ParamInvocationPlayback {
 
     public MuxStatement(MuxConnection connection, int resultSetType, int resultSetConcurrency, int resultSetHoldability) {
         this.connection = connection;
+        this.analyzer = connection.getInternal().getAnalyzer();
         this.resultSetType = resultSetType;
         this.resultSetConcurrency = resultSetConcurrency;
         this.resultSetHoldability = resultSetHoldability;

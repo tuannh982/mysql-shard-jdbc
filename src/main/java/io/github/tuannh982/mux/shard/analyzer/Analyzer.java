@@ -1,4 +1,4 @@
-package io.github.tuannh982.mux.analyzer;
+package io.github.tuannh982.mux.shard.analyzer;
 
 import java.util.Map;
 

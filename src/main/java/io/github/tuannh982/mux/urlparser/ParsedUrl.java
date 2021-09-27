@@ -8,7 +8,7 @@ import java.util.Properties;
 @Getter
 @AllArgsConstructor
 public class ParsedUrl {
-    private final String[] configServerAddresses;
+    private final String configServerAddress;
     private final String configKeyId;
     private final String database;
     private final Properties properties;

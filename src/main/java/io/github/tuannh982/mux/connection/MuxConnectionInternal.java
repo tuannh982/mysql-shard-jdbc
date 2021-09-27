@@ -1,20 +1,29 @@
 package io.github.tuannh982.mux.connection;
 
+import io.github.tuannh982.mux.config.ShardConfig;
+import io.github.tuannh982.mux.config.ShardConfigStore;
+import io.github.tuannh982.mux.config.ShardConfigStoreFactory;
+import io.github.tuannh982.mux.shard.analyzer.Analyzer;
+import io.github.tuannh982.mux.shard.analyzer.AnalyzerFactory;
+import io.github.tuannh982.mux.shard.shardops.Murmur3Hash;
+import io.github.tuannh982.mux.shard.shardops.ShardOps;
 import io.github.tuannh982.mux.urlparser.ParsedUrl;
+import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 
-import java.sql.Connection;
-import java.sql.SQLClientInfoException;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
 import java.util.*;
 import java.util.concurrent.Executor;
 import java.util.concurrent.locks.ReentrantLock;
 
 import static io.github.tuannh982.mux.connection.Constants.*;
 
+@Slf4j
 public class MuxConnectionInternal {
     private final ReentrantLock lock;
     private final EnumMap<ConnectionProperties, Object> connectionProperties;
+    private final ShardConfigStore shardConfigStore;
+    private final ShardConfig shardConfig;
     private final Connection[] connections;
     private volatile boolean isClosed = false;
     // transaction
@@ -26,17 +35,73 @@ public class MuxConnectionInternal {
         PREPARED,
     }
     private TransactionState transactionStatus = TransactionState.INITIALIZED;
+    //
+    @Getter
+    private final Analyzer analyzer;
+    @Getter
+    private final ShardOps shardOps;
 
-    public MuxConnectionInternal(ParsedUrl parsedUrl, ReentrantLock lock) {
+    public MuxConnectionInternal(ParsedUrl parsedUrl, ReentrantLock lock) throws SQLException {
         this.lock = lock;
         this.connectionProperties = new EnumMap<>(ConnectionProperties.class);
-        // TODO
+        final String username = parsedUrl.getProperties().getProperty("user");
+        final String password = parsedUrl.getProperties().getProperty("password");
+        this.shardConfigStore = ShardConfigStoreFactory.getShardConfig(
+                parsedUrl.getConfigServerAddress(),
+                parsedUrl.getConfigKeyId(),
+                username,
+                password
+        );
+        this.shardConfig = this.shardConfigStore.fetchConfig();
+        this.connections = new Connection[shardConfig.getPhysNodeCount()];
+        for (int i = 0; i < shardConfig.getPhysNodeCount(); i++) {
+            ShardConfig.JdbcConfig config = shardConfig.getPhysNodeJdbcConfigs()[i];
+            this.connections[i] = DriverManager.getConnection(String.format(config.getJdbcTemplate(), parsedUrl.getDatabase()), parsedUrl.getProperties());
+        }
+        setAutoCommit(false);
+        setDefaultConnectionPropertyValues();
+        this.analyzer = AnalyzerFactory.defaultAnalyzer();
+        this.shardOps = new ShardOps(
+                shardConfig.getPhysNodeCount(),
+                shardConfig.getPhysNodeShardRanges(),
+                new Murmur3Hash()
+        );
+        log.debug("---------CONNECTION INFO--------");
+        log.debug("version=" + shardConfig.getVersion());
+        log.debug("config servers=" + parsedUrl.getConfigServerAddress());
+        log.debug("config instance key ID=" + parsedUrl.getConfigKeyId());
+        log.debug("phys. node count=" + shardConfig.getPhysNodeCount());
+        log.debug("phys. node info=" + Arrays.toString(shardConfig.getPhysNodeJdbcConfigs()));
+        log.debug("phys. node shard range=" + Arrays.toString(shardConfig.getPhysNodeShardRanges()));
+        log.debug("username=" + username);
+        log.debug("database=" + parsedUrl.getDatabase());
+        log.debug("properties=" + parsedUrl.getProperties().toString());
+        log.debug("table shard config=" + Arrays.toString(shardConfig.getTableShardConfigs()));
+        log.debug("--------------------------------");
     }
 
-    private void checkVersion() {
+    private void setDefaultConnectionPropertyValues() throws SQLException {
+        if (connections.length != 0) {
+            Connection connection = connections[0];
+            this.connectionProperties.put(ConnectionProperties.AUTO_COMMIT, connection.getAutoCommit());
+            this.connectionProperties.put(ConnectionProperties.HOLDABILITY, connection.getHoldability());
+            this.connectionProperties.put(ConnectionProperties.READ_ONLY, connection.isReadOnly());
+            this.connectionProperties.put(ConnectionProperties.CATALOG, connection.getCatalog());
+            this.connectionProperties.put(ConnectionProperties.TYPE_MAP, connection.getTypeMap());
+            this.connectionProperties.put(ConnectionProperties.TRANSACTION_ISOLATION, connection.getTransactionIsolation());
+            this.connectionProperties.put(ConnectionProperties.NETWORK_TIMEOUT, connection.getNetworkTimeout());
+            this.connectionProperties.put(ConnectionProperties.CLIENT_INFO, connection.getClientInfo());
+            this.connectionProperties.put(ConnectionProperties.SCHEMA, connection.getSchema());
+        }
+    }
+
+    private void checkVersion() throws SQLException {
         lock.lock();
         try {
-            // TODO
+            long newVersion = shardConfigStore.version();
+            if (shardConfig.getVersion() != newVersion) {
+                throw new SQLException("Version changed");
+            }
         } finally {
             lock.unlock();
         }

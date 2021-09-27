@@ -20,7 +20,7 @@ public class MuxConnection implements Connection {
         this.lock = lock;
     }
 
-    public static MuxConnection newConnection(ParsedUrl parsedUrl) {
+    public static MuxConnection newConnection(ParsedUrl parsedUrl) throws SQLException {
         ReentrantLock lock = new ReentrantLock();
         MuxConnectionInternal internal = new MuxConnectionInternal(parsedUrl, lock);
         return new MuxConnection(internal, lock);
@@ -163,6 +163,7 @@ public class MuxConnection implements Connection {
         internal.setTransactionIsolation(level);
     }
 
+    @SuppressWarnings("MagicConstant")
     @Override
     public int getTransactionIsolation() throws SQLException {
         return internal.getTransactionIsolation();

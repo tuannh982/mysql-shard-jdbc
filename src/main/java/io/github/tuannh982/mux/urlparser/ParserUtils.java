@@ -17,6 +17,7 @@ public class ParserUtils {
         return url.startsWith(Constants.URL_PREFIX);
     }
 
+    @SuppressWarnings("java:S3776")
     public static ParsedUrl parse(String url, Properties info) throws SQLException {
         if (info == null) {
             info = new Properties();
@@ -24,9 +25,9 @@ public class ParserUtils {
         if (acceptsURL(url)) {
             Matcher matcher = Constants.URL_PATTERN.matcher(url);
             if (matcher.find()) {
-                String configServerAddresses = matcher.group(1);
-                if (StringUtils.isBlank(configServerAddresses)) {
-                    throw new SQLException("configServerAddresses is blank");
+                String configServerAddress = matcher.group(1);
+                if (StringUtils.isBlank(configServerAddress)) {
+                    throw new SQLException("configServerAddress is blank");
                 }
                 String configKeyId = matcher.group(2);
                 if (StringUtils.isBlank(configKeyId)) {
@@ -44,7 +45,7 @@ public class ParserUtils {
                     properties = parseDBProperties(dbParams.substring(1), info);
                 }
                 return new ParsedUrl(
-                        configServerAddresses.split(","),
+                        configServerAddress,
                         configKeyId,
                         database,
                         properties

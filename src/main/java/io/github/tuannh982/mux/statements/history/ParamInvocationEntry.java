@@ -1,6 +1,5 @@
 package io.github.tuannh982.mux.statements.history;
 
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 import java.sql.SQLException;
