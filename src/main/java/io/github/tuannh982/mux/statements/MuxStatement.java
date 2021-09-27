@@ -1,105 +1,291 @@
 package io.github.tuannh982.mux.statements;
 
+import io.github.tuannh982.mux.analyzer.Analyzer;
 import io.github.tuannh982.mux.connection.Constants;
 import io.github.tuannh982.mux.connection.MuxConnection;
 import io.github.tuannh982.mux.statements.history.ParamInvocationEntry;
 import io.github.tuannh982.mux.statements.history.ParamInvocationHistory;
 import io.github.tuannh982.mux.statements.history.ParamInvocationPlayback;
+import io.github.tuannh982.mux.statements.resultset.MuxResultSet;
 
 import java.sql.*;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import static io.github.tuannh982.mux.connection.Constants.UNINITIALIZED_VARIABLE;
-import static io.github.tuannh982.mux.statements.StatementInvocationMethod.*;
+import static io.github.tuannh982.mux.statements.MuxStatementConstructorType.*;
+import static io.github.tuannh982.mux.statements.MuxStatementInvocationMethod.*;
 
+@SuppressWarnings("DuplicatedCode")
 public class MuxStatement implements Statement, ParamInvocationPlayback {
-    protected final MuxConnection connection;
-    private final ParamInvocationHistory<StatementInvocationMethod> paramInvocationHistory = new ParamInvocationHistory<>();
+    protected MuxStatementConstructorType constructorType;
+    protected MuxConnection connection;
+    protected Analyzer analyzer;
+    private final ParamInvocationHistory<MuxStatementInvocationMethod> paramInvocationHistory = new ParamInvocationHistory<>();
     protected int resultSetType = ResultSet.TYPE_FORWARD_ONLY;
     protected int resultSetConcurrency = ResultSet.CONCUR_READ_ONLY;
-    protected int resultSetHoldability = -1;
-    protected List<? extends Statement> statements;
-    protected ResultSet resultSet;
-    protected int updateCount;
+    protected int resultSetHoldability = ResultSet.HOLD_CURSORS_OVER_COMMIT;
+    protected List<? extends Statement> statements = new ArrayList<>();
+    protected ResultSet resultSet = null;
+    protected int updateCount = 0;
+    private volatile boolean isClosed = false;
+
+    public MuxStatement(MuxConnection connection) {
+        this.connection = connection;
+        this.constructorType = STATEMENT_EMPTY;
+    }
+
+    public MuxStatement(MuxConnection connection, int resultSetType, int resultSetConcurrency) {
+        this.connection = connection;
+        this.resultSetType = resultSetType;
+        this.resultSetConcurrency = resultSetConcurrency;
+        this.constructorType = STATEMENT_II;
+    }
+
+    public MuxStatement(MuxConnection connection, int resultSetType, int resultSetConcurrency, int resultSetHoldability) {
+        this.connection = connection;
+        this.resultSetType = resultSetType;
+        this.resultSetConcurrency = resultSetConcurrency;
+        this.resultSetHoldability = resultSetHoldability;
+        this.constructorType = STATEMENT_III;
+    }
 
     //-------------------------
+    private void prepareStatements(Integer[] selectedShards) throws SQLException {
+        switch (constructorType) {
+            case STATEMENT_EMPTY:
+                statements = connection.getInternal().createStatement(selectedShards);
+                break;
+            case STATEMENT_II:
+                statements = connection.getInternal().createStatement(selectedShards, resultSetType, resultSetConcurrency);
+                break;
+            case STATEMENT_III:
+                statements = connection.getInternal().createStatement(selectedShards, resultSetType, resultSetConcurrency, resultSetHoldability);
+                break;
+            default:
+                throw new SQLException("Unexpected type " + constructorType);
+        }
+    }
+
     @Override
     public ResultSet executeQuery(String sql) throws SQLException {
-        return null;
+        synchronized (this) {
+            Map<Integer, String> sqls = analyzer.analyze(sql, false, null);
+            Integer[] shardIndexes = sqls.keySet().toArray(new Integer[0]);
+            prepareStatements(shardIndexes);
+            playback();
+            List<ResultSet> resultSets = new ArrayList<>(sqls.size());
+            for (int i = 0; i < shardIndexes.length; i++) {
+                statements.get(i).executeQuery(sqls.get(shardIndexes[i]));
+            }
+            resultSet = new MuxResultSet(this, resultSets);
+            return resultSet;
+        }
     }
 
     @Override
     public int executeUpdate(String sql) throws SQLException {
-        return 0;
-    }
-
-    @Override
-    public boolean execute(String sql) throws SQLException {
-        return false;
+        synchronized (this) {
+            Map<Integer, String> sqls = analyzer.analyze(sql, false, null);
+            Integer[] shardIndexes = sqls.keySet().toArray(new Integer[0]);
+            prepareStatements(shardIndexes);
+            playback();
+            int affected = 0;
+            for (int i = 0; i < shardIndexes.length; i++) {
+                affected += statements.get(i).executeUpdate(sqls.get(shardIndexes[i]));
+            }
+            updateCount = affected;
+            return updateCount;
+        }
     }
 
     @Override
     public int executeUpdate(String sql, int autoGeneratedKeys) throws SQLException {
-        return 0;
+        synchronized (this) {
+            Map<Integer, String> sqls = analyzer.analyze(sql, false, null);
+            Integer[] shardIndexes = sqls.keySet().toArray(new Integer[0]);
+            prepareStatements(shardIndexes);
+            playback();
+            int affected = 0;
+            for (int i = 0; i < shardIndexes.length; i++) {
+                affected += statements.get(i).executeUpdate(sqls.get(shardIndexes[i]), autoGeneratedKeys);
+            }
+            updateCount = affected;
+            return updateCount;
+        }
     }
 
     @Override
     public int executeUpdate(String sql, int[] columnIndexes) throws SQLException {
-        return 0;
+        synchronized (this) {
+            Map<Integer, String> sqls = analyzer.analyze(sql, false, null);
+            Integer[] shardIndexes = sqls.keySet().toArray(new Integer[0]);
+            prepareStatements(shardIndexes);
+            playback();
+            int affected = 0;
+            for (int i = 0; i < shardIndexes.length; i++) {
+                affected += statements.get(i).executeUpdate(sqls.get(shardIndexes[i]), columnIndexes);
+            }
+            updateCount = affected;
+            return updateCount;
+        }
     }
 
     @Override
     public int executeUpdate(String sql, String[] columnNames) throws SQLException {
-        return 0;
+        synchronized (this) {
+            Map<Integer, String> sqls = analyzer.analyze(sql, false, null);
+            Integer[] shardIndexes = sqls.keySet().toArray(new Integer[0]);
+            prepareStatements(shardIndexes);
+            playback();
+            int affected = 0;
+            for (int i = 0; i < shardIndexes.length; i++) {
+                affected += statements.get(i).executeUpdate(sqls.get(shardIndexes[i]), columnNames);
+            }
+            updateCount = affected;
+            return updateCount;
+        }
+    }
+
+    @Override
+    public boolean execute(String sql) throws SQLException {
+        synchronized (this) {
+            Map<Integer, String> sqls = analyzer.analyze(sql, false, null);
+            Integer[] shardIndexes = sqls.keySet().toArray(new Integer[0]);
+            prepareStatements(shardIndexes);
+            playback();
+            boolean ret = false;
+            for (int i = 0; i < shardIndexes.length; i++) {
+                ret |= statements.get(i).execute(sqls.get(shardIndexes[i]));
+            }
+            return ret;
+        }
     }
 
     @Override
     public boolean execute(String sql, int autoGeneratedKeys) throws SQLException {
-        return false;
+        synchronized (this) {
+            Map<Integer, String> sqls = analyzer.analyze(sql, false, null);
+            Integer[] shardIndexes = sqls.keySet().toArray(new Integer[0]);
+            prepareStatements(shardIndexes);
+            playback();
+            boolean ret = false;
+            for (int i = 0; i < shardIndexes.length; i++) {
+                ret |= statements.get(i).execute(sqls.get(shardIndexes[i]), autoGeneratedKeys);
+            }
+            return ret;
+        }
     }
 
     @Override
     public boolean execute(String sql, int[] columnIndexes) throws SQLException {
-        return false;
+        synchronized (this) {
+            Map<Integer, String> sqls = analyzer.analyze(sql, false, null);
+            Integer[] shardIndexes = sqls.keySet().toArray(new Integer[0]);
+            prepareStatements(shardIndexes);
+            playback();
+            boolean ret = false;
+            for (int i = 0; i < shardIndexes.length; i++) {
+                ret |= statements.get(i).execute(sqls.get(shardIndexes[i]), columnIndexes);
+            }
+            return ret;
+        }
     }
 
     @Override
     public boolean execute(String sql, String[] columnNames) throws SQLException {
-        return false;
+        synchronized (this) {
+            Map<Integer, String> sqls = analyzer.analyze(sql, false, null);
+            Integer[] shardIndexes = sqls.keySet().toArray(new Integer[0]);
+            prepareStatements(shardIndexes);
+            playback();
+            boolean ret = false;
+            for (int i = 0; i < shardIndexes.length; i++) {
+                ret |= statements.get(i).execute(sqls.get(shardIndexes[i]), columnNames);
+            }
+            return ret;
+        }
+    }
+    //-------------------------
+    @Override
+    public ResultSet getResultSet() throws SQLException {
+        return resultSet;
+    }
+
+    @Override
+    public int getUpdateCount() throws SQLException {
+        return updateCount;
+    }
+
+    @Override
+    public boolean getMoreResults() throws SQLException {
+        return false; // TODO
+    }
+
+    @Override
+    public boolean getMoreResults(int current) throws SQLException {
+        return false; // TODO
+    }
+
+    @Override
+    public ResultSet getGeneratedKeys() throws SQLException {
+        return null; // TODO
     }
     //-------------------------
 
+    @SuppressWarnings("java:S3776")
     @Override
     public void playback() throws SQLException {
-        List<ParamInvocationEntry<StatementInvocationMethod>> invokeList = paramInvocationHistory.extractStateAsList();
-        for (ParamInvocationEntry<StatementInvocationMethod> invokeCommand : invokeList) {
+        List<ParamInvocationEntry<MuxStatementInvocationMethod>> invokeList = paramInvocationHistory.extractStateAsList();
+        for (ParamInvocationEntry<MuxStatementInvocationMethod> invokeCommand : invokeList) {
+            Object[] v = invokeCommand.getParams();
             switch (invokeCommand.getMethod()) {
                 case MAX_FIELD_SIZE:
-                    // TODO
+                    for (Statement statement : statements) {
+                        statement.setMaxFieldSize((Integer) v[0]);
+                    }
                     break;
                 case MAX_ROWS:
-                    // TODO
+                    for (Statement statement : statements) {
+                        statement.setMaxRows((Integer) v[0]);
+                    }
                     break;
                 case ESCAPE_PROCESSING:
-                    // TODO
+                    for (Statement statement : statements) {
+                        statement.setEscapeProcessing((Boolean) v[0]);
+                    }
                     break;
                 case QUERY_TIMEOUT:
-                    // TODO
+                    for (Statement statement : statements) {
+                        statement.setQueryTimeout((Integer) v[0]);
+                    }
                     break;
                 case CURSOR_NAME:
-                    // TODO
+                    for (Statement statement : statements) {
+                        statement.setCursorName((String) v[0]);
+                    }
                     break;
                 case FETCH_DIRECTION:
-                    // TODO
+                    for (Statement statement : statements) {
+                        //noinspection MagicConstant
+                        statement.setFetchDirection((Integer) v[0]);
+                    }
                     break;
                 case FETCH_SIZE:
-                    // TODO
+                    for (Statement statement : statements) {
+                        statement.setFetchSize((Integer) v[0]);
+                    }
                     break;
                 case CLOSE_ON_COMPLETION:
-                    // TODO
+                    for (Statement statement : statements) {
+                        statement.closeOnCompletion();
+                    }
                     break;
                 case POOLABLE:
-                    // TODO
+                    for (Statement statement : statements) {
+                        statement.setPoolable((Boolean) v[0]);
+                    }
                     break;
                 default:
                     throw new SQLException("Unexpected command " + invokeCommand.getMethod());
@@ -109,22 +295,31 @@ public class MuxStatement implements Statement, ParamInvocationPlayback {
 
     @Override
     public void close() throws SQLException {
-
+        synchronized (this) {
+            for (Statement statement : statements) {
+                statement.close();
+            }
+            isClosed = true;
+        }
     }
 
     @Override
-    public boolean isClosed() throws SQLException {
-        return false;
+    public boolean isClosed() {
+        return isClosed;
     }
 
     @Override
     public void cancel() throws SQLException {
-
+        synchronized (this) {
+            for (Statement statement : statements) {
+                statement.cancel();
+            }
+        }
     }
 
     @Override
     public int getMaxFieldSize() throws SQLException {
-        StatementInvocationMethod method = MAX_FIELD_SIZE;
+        MuxStatementInvocationMethod method = MAX_FIELD_SIZE;
         Object[] ret = paramInvocationHistory.getState().get(method);
         if (ret == null || ret.length != method.getNumberOfArgs()) {
             throw new SQLException(UNINITIALIZED_VARIABLE + "MaxFieldSize");
@@ -134,14 +329,14 @@ public class MuxStatement implements Statement, ParamInvocationPlayback {
 
     @Override
     public void setMaxFieldSize(int max) throws SQLException {
-        StatementInvocationMethod method = MAX_FIELD_SIZE;
+        MuxStatementInvocationMethod method = MAX_FIELD_SIZE;
         paramInvocationHistory.getState().put(method, new Object[] {max});
         paramInvocationHistory.getHistory().add(new ParamInvocationEntry<>(method, new Object[] {max}));
     }
 
     @Override
     public int getMaxRows() throws SQLException {
-        StatementInvocationMethod method = MAX_ROWS;
+        MuxStatementInvocationMethod method = MAX_ROWS;
         Object[] ret = paramInvocationHistory.getState().get(method);
         if (ret == null || ret.length != method.getNumberOfArgs()) {
             throw new SQLException(UNINITIALIZED_VARIABLE + "MaxRows");
@@ -151,21 +346,21 @@ public class MuxStatement implements Statement, ParamInvocationPlayback {
 
     @Override
     public void setMaxRows(int max) throws SQLException {
-        StatementInvocationMethod method = MAX_ROWS;
+        MuxStatementInvocationMethod method = MAX_ROWS;
         paramInvocationHistory.getState().put(method, new Object[] {max});
         paramInvocationHistory.getHistory().add(new ParamInvocationEntry<>(method, new Object[] {max}));
     }
 
     @Override
     public void setEscapeProcessing(boolean enable) throws SQLException {
-        StatementInvocationMethod method = ESCAPE_PROCESSING;
+        MuxStatementInvocationMethod method = ESCAPE_PROCESSING;
         paramInvocationHistory.getState().put(method, new Object[] {enable});
         paramInvocationHistory.getHistory().add(new ParamInvocationEntry<>(method, new Object[] {enable}));
     }
 
     @Override
     public int getQueryTimeout() throws SQLException {
-        StatementInvocationMethod method = QUERY_TIMEOUT;
+        MuxStatementInvocationMethod method = QUERY_TIMEOUT;
         Object[] ret = paramInvocationHistory.getState().get(method);
         if (ret == null || ret.length != method.getNumberOfArgs()) {
             throw new SQLException(UNINITIALIZED_VARIABLE + "QueryTimeout");
@@ -175,21 +370,21 @@ public class MuxStatement implements Statement, ParamInvocationPlayback {
 
     @Override
     public void setQueryTimeout(int seconds) throws SQLException {
-        StatementInvocationMethod method = QUERY_TIMEOUT;
+        MuxStatementInvocationMethod method = QUERY_TIMEOUT;
         paramInvocationHistory.getState().put(method, new Object[] {seconds});
         paramInvocationHistory.getHistory().add(new ParamInvocationEntry<>(method, new Object[] {seconds}));
     }
 
     @Override
     public void setCursorName(String name) throws SQLException {
-        StatementInvocationMethod method = CURSOR_NAME;
+        MuxStatementInvocationMethod method = CURSOR_NAME;
         paramInvocationHistory.getState().put(method, new Object[] {name});
         paramInvocationHistory.getHistory().add(new ParamInvocationEntry<>(method, new Object[] {name}));
     }
 
     @Override
     public void setFetchDirection(int direction) throws SQLException {
-        StatementInvocationMethod method = FETCH_DIRECTION;
+        MuxStatementInvocationMethod method = FETCH_DIRECTION;
         paramInvocationHistory.getState().put(method, new Object[] {direction});
         paramInvocationHistory.getHistory().add(new ParamInvocationEntry<>(method, new Object[] {direction}));
     }
@@ -197,7 +392,7 @@ public class MuxStatement implements Statement, ParamInvocationPlayback {
     @SuppressWarnings("MagicConstant")
     @Override
     public int getFetchDirection() throws SQLException {
-        StatementInvocationMethod method = FETCH_DIRECTION;
+        MuxStatementInvocationMethod method = FETCH_DIRECTION;
         Object[] ret = paramInvocationHistory.getState().get(method);
         if (ret == null || ret.length != method.getNumberOfArgs()) {
             throw new SQLException(UNINITIALIZED_VARIABLE + "FetchDirection");
@@ -207,14 +402,14 @@ public class MuxStatement implements Statement, ParamInvocationPlayback {
 
     @Override
     public void setFetchSize(int rows) throws SQLException {
-        StatementInvocationMethod method = FETCH_SIZE;
+        MuxStatementInvocationMethod method = FETCH_SIZE;
         paramInvocationHistory.getState().put(method, new Object[] {rows});
         paramInvocationHistory.getHistory().add(new ParamInvocationEntry<>(method, new Object[] {rows}));
     }
 
     @Override
     public int getFetchSize() throws SQLException {
-        StatementInvocationMethod method = FETCH_SIZE;
+        MuxStatementInvocationMethod method = FETCH_SIZE;
         Object[] ret = paramInvocationHistory.getState().get(method);
         if (ret == null || ret.length != method.getNumberOfArgs()) {
             throw new SQLException(UNINITIALIZED_VARIABLE + "FetchSize");
@@ -224,14 +419,14 @@ public class MuxStatement implements Statement, ParamInvocationPlayback {
 
     @Override
     public void closeOnCompletion() throws SQLException {
-        StatementInvocationMethod method = CLOSE_ON_COMPLETION;
+        MuxStatementInvocationMethod method = CLOSE_ON_COMPLETION;
         paramInvocationHistory.getState().put(method, new Object[] {true});
         paramInvocationHistory.getHistory().add(new ParamInvocationEntry<>(method, new Object[] {true}));
     }
 
     @Override
-    public boolean isCloseOnCompletion() throws SQLException {
-        StatementInvocationMethod method = CLOSE_ON_COMPLETION;
+    public boolean isCloseOnCompletion() {
+        MuxStatementInvocationMethod method = CLOSE_ON_COMPLETION;
         Object[] ret = paramInvocationHistory.getState().get(method);
         if (ret == null || ret.length != method.getNumberOfArgs()) {
             return false;
@@ -241,14 +436,14 @@ public class MuxStatement implements Statement, ParamInvocationPlayback {
 
     @Override
     public void setPoolable(boolean poolable) throws SQLException {
-        StatementInvocationMethod method = POOLABLE;
+        MuxStatementInvocationMethod method = POOLABLE;
         paramInvocationHistory.getState().put(method, new Object[] {poolable});
         paramInvocationHistory.getHistory().add(new ParamInvocationEntry<>(method, new Object[] {poolable}));
     }
 
     @Override
     public boolean isPoolable() throws SQLException {
-        StatementInvocationMethod method = POOLABLE;
+        MuxStatementInvocationMethod method = POOLABLE;
         Object[] ret = paramInvocationHistory.getState().get(method);
         if (ret == null || ret.length != method.getNumberOfArgs()) {
             throw new SQLException(UNINITIALIZED_VARIABLE + "Poolable");
@@ -257,69 +452,41 @@ public class MuxStatement implements Statement, ParamInvocationPlayback {
     }
 
     @Override
-    public ResultSet getResultSet() throws SQLException {
-        return null;
-    }
-
-    @Override
-    public int getUpdateCount() throws SQLException {
-        return 0;
-    }
-
-    @Override
-    public boolean getMoreResults() throws SQLException {
-        return false;
-    }
-
-    @Override
-    public int getResultSetConcurrency() throws SQLException {
-        return 0;
-    }
-
-    @Override
-    public int getResultSetType() throws SQLException {
-        return 0;
-    }
-
-    @Override
-    public void addBatch(String sql) throws SQLException {
-        // TODO support later
-        // might be not supported
-        throw new SQLException(Constants.OPERATION_NOT_SUPPORTED);
-    }
-
-    @Override
-    public void clearBatch() throws SQLException {
-        // TODO support later
-        // might be not supported
-        throw new SQLException(Constants.OPERATION_NOT_SUPPORTED);
-    }
-
-    @Override
-    public int[] executeBatch() throws SQLException {
-        // TODO support later
-        // might be not supported
-        throw new SQLException(Constants.OPERATION_NOT_SUPPORTED);
-    }
-
-    @Override
     public Connection getConnection() throws SQLException {
         return connection;
     }
 
     @Override
-    public boolean getMoreResults(int current) throws SQLException {
-        return false;
+    public int getResultSetConcurrency() {
+        return resultSetConcurrency;
     }
 
     @Override
-    public ResultSet getGeneratedKeys() throws SQLException {
-        return null;
+    public int getResultSetType() {
+        return resultSetType;
     }
 
     @Override
     public int getResultSetHoldability() throws SQLException {
-        return 0;
+        return resultSetHoldability;
+    }
+
+    @Override
+    public void addBatch(String sql) throws SQLException {
+        // will not be supported
+        throw new SQLException(Constants.OPERATION_NOT_SUPPORTED);
+    }
+
+    @Override
+    public void clearBatch() throws SQLException {
+        // will not be supported
+        throw new SQLException(Constants.OPERATION_NOT_SUPPORTED);
+    }
+
+    @Override
+    public int[] executeBatch() throws SQLException {
+        // will not be supported
+        throw new SQLException(Constants.OPERATION_NOT_SUPPORTED);
     }
 
     @Override

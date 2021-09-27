@@ -5,10 +5,8 @@ import io.github.tuannh982.mux.urlparser.ParsedUrl;
 import java.sql.Connection;
 import java.sql.SQLClientInfoException;
 import java.sql.SQLException;
-import java.util.EnumMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
+import java.sql.Statement;
+import java.util.*;
 import java.util.concurrent.Executor;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -17,14 +15,64 @@ import static io.github.tuannh982.mux.connection.Constants.*;
 public class MuxConnectionInternal {
     private final ReentrantLock lock;
     private final EnumMap<ConnectionProperties, Object> connectionProperties;
-    private final List<Connection> connections;
-    private final List<Connection> toBeUsedConnections;
+    private final Connection[] connections;
     private volatile boolean isClosed = false;
-    private int committed = 0;
+    // transaction
+    private String transactionIdentifier = null;
+    private enum TransactionState {
+        INITIALIZED,
+        STARTED,
+        ENDED,
+        PREPARED,
+    }
+    private TransactionState transactionStatus = TransactionState.INITIALIZED;
 
     public MuxConnectionInternal(ParsedUrl parsedUrl, ReentrantLock lock) {
         this.lock = lock;
         this.connectionProperties = new EnumMap<>(ConnectionProperties.class);
+        // TODO
+    }
+
+    private void checkVersion() {
+        lock.lock();
+        try {
+            // TODO
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    public List<Statement> createStatement(Integer[] selectedShards) throws SQLException {
+        checkVersion();
+        List<Statement> ret = new ArrayList<>();
+        if (selectedShards != null) {
+            for (int i : selectedShards) {
+                ret.add(connections[i].createStatement());
+            }
+        }
+        return ret;
+    }
+
+    public List<Statement> createStatement(Integer[] selectedShards, int resultSetType, int resultSetConcurrency) throws SQLException {
+        checkVersion();
+        List<Statement> ret = new ArrayList<>();
+        if (selectedShards != null) {
+            for (int i : selectedShards) {
+                ret.add(connections[i].createStatement(resultSetType, resultSetConcurrency));
+            }
+        }
+        return ret;
+    }
+
+    public List<Statement> createStatement(Integer[] selectedShards, int resultSetType, int resultSetConcurrency, int resultSetHoldability) throws SQLException {
+        checkVersion();
+        List<Statement> ret = new ArrayList<>();
+        if (selectedShards != null) {
+            for (int i : selectedShards) {
+                ret.add(connections[i].createStatement(resultSetType, resultSetConcurrency, resultSetHoldability));
+            }
+        }
+        return ret;
     }
 
     public void setAutoCommit(boolean autoCommit) throws SQLException {
@@ -194,8 +242,8 @@ public class MuxConnectionInternal {
     public void commit() throws SQLException {
         lock.lock();
         try {
-            for (committed = 0; committed < toBeUsedConnections.size(); committed++) {
-                connections.get(committed).commit();
+            for (Connection connection : connections) {
+                connection.commit();
             }
         } finally {
             lock.unlock();
@@ -205,8 +253,8 @@ public class MuxConnectionInternal {
     public void rollback() throws SQLException {
         lock.lock();
         try {
-            for (int i = 0; i < committed; i++) {
-                connections.get(i).rollback();
+            for (Connection connection : connections) {
+                connection.rollback();
             }
         } finally {
             lock.unlock();

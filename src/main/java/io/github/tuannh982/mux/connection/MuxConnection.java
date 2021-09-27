@@ -1,6 +1,8 @@
 package io.github.tuannh982.mux.connection;
 
+import io.github.tuannh982.mux.statements.MuxStatement;
 import io.github.tuannh982.mux.urlparser.ParsedUrl;
+import lombok.Getter;
 
 import java.sql.*;
 import java.util.Map;
@@ -9,6 +11,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class MuxConnection implements Connection {
+    @Getter
     private final MuxConnectionInternal internal;
     private final ReentrantLock lock;
 
@@ -26,20 +29,17 @@ public class MuxConnection implements Connection {
     //-----createStatement-----
     @Override
     public Statement createStatement() throws SQLException {
-        // TODO
-        return null;
+        return new MuxStatement(this);
     }
 
     @Override
     public Statement createStatement(int resultSetType, int resultSetConcurrency) throws SQLException {
-        // TODO
-        return null;
+        return new MuxStatement(this, resultSetType, resultSetConcurrency);
     }
 
     @Override
     public Statement createStatement(int resultSetType, int resultSetConcurrency, int resultSetHoldability) throws SQLException {
-        // TODO
-        return null;
+        return new MuxStatement(this, resultSetType, resultSetConcurrency, resultSetHoldability);
     }
     //-------------------------
 
@@ -84,22 +84,19 @@ public class MuxConnection implements Connection {
     //-----prepareCall---------
     @Override
     public CallableStatement prepareCall(String sql) throws SQLException {
-        // TODO support later
-        // might be not supported
+        // will not be supported
         throw new SQLException(Constants.OPERATION_NOT_SUPPORTED);
     }
 
     @Override
     public CallableStatement prepareCall(String sql, int resultSetType, int resultSetConcurrency) throws SQLException {
-        // TODO support later
-        // might be not supported
+        // will not be supported
         throw new SQLException(Constants.OPERATION_NOT_SUPPORTED);
     }
 
     @Override
     public CallableStatement prepareCall(String sql, int resultSetType, int resultSetConcurrency, int resultSetHoldability) throws SQLException {
-        // TODO support later
-        // might be not supported
+        // will not be supported
         throw new SQLException(Constants.OPERATION_NOT_SUPPORTED);
     }
     //-------------------------
