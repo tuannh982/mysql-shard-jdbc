@@ -28,6 +28,9 @@ public class ShardOps {
     }
 
     public int apply(byte[] shardingKey) {
+        if (shardingKey == null) {
+            throw new IllegalStateException("Sharding key must not be null");
+        }
         long hashValue = hash.hash(shardingKey);
         Map.Entry<Long, Integer> entry = invertedSortedMapIndex.floorEntry(hashValue);
         ShardConfig.Range foundRange = physNodeShardRanges[entry.getValue()];

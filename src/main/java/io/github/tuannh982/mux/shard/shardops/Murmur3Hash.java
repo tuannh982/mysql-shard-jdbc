@@ -7,27 +7,6 @@ import java.nio.charset.StandardCharsets;
 @SuppressWarnings("all")
 public class Murmur3Hash implements Hash {
     @Override
-    public long hash(Object o) {
-        byte[] bArr = null;
-        if (o == null) {
-            return 0;
-        } else if (o instanceof String) {
-            bArr = ((String) o).getBytes(StandardCharsets.UTF_8);
-        } else if (o instanceof byte[]) {
-            bArr = (byte[]) o;
-        } else if (o instanceof Integer) {
-            bArr = new byte[4];
-            ByteUtils.writeInt(bArr, 0, (Integer) o);
-        } else if (o instanceof Long) {
-            bArr = new byte[8];
-            ByteUtils.writeLong(bArr, 0, (Long) o);
-        } else {
-            throw new IllegalStateException("Could not hash value of this type: " + o.getClass());
-        }
-        return hash(bArr);
-    }
-
-    @Override
     public long hash(byte[] array) {
         int o = 0;
         int r = array.length;

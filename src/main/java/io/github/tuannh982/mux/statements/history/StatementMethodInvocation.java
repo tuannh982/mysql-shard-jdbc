@@ -10,10 +10,10 @@ import java.util.List;
 import java.util.Map;
 
 @Getter
-public class StatementMethodInvocationState {
+public class StatementMethodInvocation {
     private final Map<MuxStatementMethodInvocation, Object[]> state;
 
-    public StatementMethodInvocationState() {
+    public StatementMethodInvocation() {
         this.state = new HashMap<>();
     }
 

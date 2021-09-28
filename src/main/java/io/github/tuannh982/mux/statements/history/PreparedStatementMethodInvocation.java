@@ -7,17 +7,17 @@ import java.util.HashMap;
 import java.util.Map;
 
 @Getter
-public class PreparedStatementMethodInvocationState {
+public class PreparedStatementMethodInvocation {
     private final Map<Integer, MethodInvocationEntry<MuxPreparedStatementMethodInvocation>> state;
-    private final Map<Integer, byte[]> stateAsByteArray;
+    private final Map<Integer, byte[]> brState;
 
-    public PreparedStatementMethodInvocationState() {
+    public PreparedStatementMethodInvocation() {
         this.state = new HashMap<>();
-        this.stateAsByteArray = new HashMap<>();
+        this.brState = new HashMap<>();
     }
 
     public void clear() {
         this.state.clear();
-        this.stateAsByteArray.clear();
+        this.brState.clear();
     }
 }
