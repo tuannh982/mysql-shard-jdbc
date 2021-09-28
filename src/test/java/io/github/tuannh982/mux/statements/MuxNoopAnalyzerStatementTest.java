@@ -32,7 +32,7 @@ public class MuxNoopAnalyzerStatementTest {
 
     @RegisterExtension
     public static DockerComposeExtension docker = DockerComposeExtension.builder()
-            .file("src/test/resources/docker-compose.yaml")
+            .file("src/test/resources/docker-compose-only-db.yaml")
             .waitingForService("db1", HealthChecks.toHaveAllPortsOpen())
             .waitingForService("db2", HealthChecks.toHaveAllPortsOpen())
             .waitingForService("db3", HealthChecks.toHaveAllPortsOpen())
@@ -104,6 +104,12 @@ public class MuxNoopAnalyzerStatementTest {
         }
     }
 
+    private int executeUpdateSqlNoReturn(Connection connection, String sql) throws SQLException {
+        try (Statement statement = connection.createStatement()) {
+            return statement.executeUpdate(sql);
+        }
+    }
+
     /**
      * execute(String sql)
      * create table
@@ -121,6 +127,7 @@ public class MuxNoopAnalyzerStatementTest {
         String connectionString = String.format("jdbc:mux://(127.0.0.1:12345)[keyId01]/%s?characterEncoding=UTF-8&sessionVariables=sql_mode=ANSI_QUOTES&rewriteBatchedStatements=true", database);
         Connection connection = DriverManager.getConnection(connectionString, username, password);
         //-----create table---------------------------------------------------------------------------------------------
+        executeSqlNoReturn(connection, "drop table if exists contacts;", true);
         executeSqlNoReturn(
                 connection,
                 "CREATE TABLE contacts (\n" +
@@ -146,9 +153,13 @@ public class MuxNoopAnalyzerStatementTest {
                 StringUtils.collapseWhitespace(readDdl).toLowerCase(Locale.ROOT)
                         .startsWith(StringUtils.collapseWhitespace(showTableResultPrefix).toLowerCase(Locale.ROOT))
         );
+        resultSet.close();
+        statement.close();
+        connection.close();
         //-----cleanup table--------------------------------------------------------------------------------------------
         connection = DriverManager.getConnection(connectionString, username, password);
-        executeSqlNoReturn(connection, "drop table contacts;", false);
+        executeSqlNoReturn(connection, "drop table if exists contacts;", false);
+        connection.close();
     }
 
     /**
@@ -156,14 +167,16 @@ public class MuxNoopAnalyzerStatementTest {
      * executeQuery(String sql)
      * modify table
      * insert data into table
+     * update data
      * read data
      */
     @Test
-    public void testExecuteModifyTableAndInsert() throws SQLException {
+    public void testExecuteModifyTableAndInsertAndUpdate() throws SQLException {
         String tableName = "contacts";
         String connectionString = String.format("jdbc:mux://(127.0.0.1:12345)[keyId01]/%s?characterEncoding=UTF-8&sessionVariables=sql_mode=ANSI_QUOTES&rewriteBatchedStatements=true", database);
         Connection connection = DriverManager.getConnection(connectionString, username, password);
         //-----create table---------------------------------------------------------------------------------------------
+        executeSqlNoReturn(connection, "drop table if exists contacts;", false);
         executeSqlNoReturn(
                 connection,
                 "CREATE TABLE contacts (\n" +
@@ -178,9 +191,62 @@ public class MuxNoopAnalyzerStatementTest {
         executeSqlNoReturn(connection,"alter table contacts drop column phone, drop column email;", false);
         executeSqlNoReturn(connection,"alter table contacts add column contact_str varchar(50);", false);
         //-----insert data into table-----------------------------------------------------------------------------------
-        // TODO
+        Object[][] values = new Object[][] {
+                new Object[] {1, "a", "a1", "aa1a"},
+                new Object[] {3, "b", "b1", "bb1b"},
+                new Object[] {8, "c", "c1", "c1c"},
+        };
+        int affected = executeUpdateSqlNoReturn(
+                connection,
+                "insert into contacts(contact_id, first_name, last_name, contact_str)\n" +
+                        "values\n" +
+                        "       (1, 'a', 'a1', 'aa1a'),\n" +
+                        "       (3, 'b', 'b1', 'bb1b'),\n" +
+                        "       (8, 'c', 'c1', 'c1c');"
+        );
+        connection.commit(); // commit after insert
+        assertEquals(values.length, affected);
+        connection.close();
+        //-----read data from table-------------------------------------------------------------------------------------
+        String connectionStringDb1 = String.format("jdbc:mysql://127.0.0.1:20306/%s?characterEncoding=UTF-8&sessionVariables=sql_mode=ANSI_QUOTES&rewriteBatchedStatements=true", database);
+        connection = DriverManager.getConnection(connectionStringDb1, username, password);
+        Statement statement = connection.createStatement();
+        ResultSet resultSet = statement.executeQuery("select * from contacts;");
+        int index = 0;
+        while (resultSet.next()) {
+            int contactId = resultSet.getInt(1);
+            String firstName = resultSet.getString(2);
+            String lastName = resultSet.getString(3);
+            String contactStr = resultSet.getString(4);
+            assertEquals(contactId, values[index][0]);
+            assertEquals(firstName, values[index][1]);
+            assertEquals(lastName, values[index][2]);
+            assertEquals(contactStr, values[index][3]);
+            index++;
+        }
+        assertEquals(index, values.length);
+        resultSet.close();
+        statement.close();
+        connection.close();
+        //-----update data from table-----------------------------------------------------------------------------------
+        connection = DriverManager.getConnection(connectionString, username, password);
+        affected = executeUpdateSqlNoReturn(connection,"update contacts set first_name = 'aaabbbccc' where contact_id = 3;");
+        connection.commit(); // commit after insert
+        assertEquals(1, affected);
+        connection.close();
+        //
+        connection = DriverManager.getConnection(connectionStringDb1, username, password);
+        statement = connection.createStatement();
+        resultSet = statement.executeQuery("select * from contacts where contact_id = 3;");
+        assertTrue(resultSet.next()); // must be true
+        String firstName = resultSet.getString(2);
+        assertEquals("aaabbbccc", firstName);
+        resultSet.close();
+        statement.close();
+        connection.close();
         //-----cleanup table--------------------------------------------------------------------------------------------
-        executeSqlNoReturn(connection, "drop table contacts;", false);
+        connection = DriverManager.getConnection(connectionString, username, password);
+        executeSqlNoReturn(connection, "drop table if exists contacts;", false);
         connection.close();
     }
 
