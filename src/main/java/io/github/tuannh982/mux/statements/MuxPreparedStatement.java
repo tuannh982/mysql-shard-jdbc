@@ -1,25 +1,27 @@
 package io.github.tuannh982.mux.statements;
 
+import io.github.tuannh982.mux.commons.binary.ByteUtils;
+import io.github.tuannh982.mux.commons.io.IOUtils;
 import io.github.tuannh982.mux.commons.tuple.Tuple2;
 import io.github.tuannh982.mux.connection.MuxConnection;
 import io.github.tuannh982.mux.statements.history.MethodInvocationEntry;
 import io.github.tuannh982.mux.statements.history.MethodInvocationPlayback;
 import io.github.tuannh982.mux.statements.history.PreparedStatementMethodInvocationState;
-import io.github.tuannh982.mux.statements.resultset.MuxResultSet;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 import java.math.BigDecimal;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.sql.*;
-import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.List;
 import java.util.Map;
 
 import static io.github.tuannh982.mux.connection.Constants.OPERATION_NOT_SUPPORTED;
 import static io.github.tuannh982.mux.statements.MuxPreparedStatementMethodInvocation.*;
 
+@SuppressWarnings("DuplicatedCode")
 public class MuxPreparedStatement extends MuxStatement implements PreparedStatement, MethodInvocationPlayback {
     private final ConstructorType preparedConstructorType;
     //------------------------------------------------------------------------------------------------------------------
@@ -161,71 +163,121 @@ public class MuxPreparedStatement extends MuxStatement implements PreparedStatem
     @Override
     public void setNull(int i, int i1) throws SQLException {
         methodInvocationState.getState().put(i, new MethodInvocationEntry<>(SET_NULL_INT_I_INT_I1, new Object[] {i1}));
+        methodInvocationState.getStateAsByteArray().put(i, null);
     }
 
     @Override
     public void setBoolean(int i, boolean b) throws SQLException {
         methodInvocationState.getState().put(i, new MethodInvocationEntry<>(SET_BOOLEAN_INT_I_BOOLEAN_B, new Object[] {b}));
+        methodInvocationState.getStateAsByteArray().put(i, new byte[] {(byte) (b ? 1 : 0)});
     }
 
     @Override
     public void setByte(int i, byte b) throws SQLException {
         methodInvocationState.getState().put(i, new MethodInvocationEntry<>(SET_BYTE_INT_I_BYTE_B, new Object[] {b}));
+        methodInvocationState.getStateAsByteArray().put(i, new byte[] {b});
     }
 
     @Override
     public void setShort(int i, short i1) throws SQLException {
         methodInvocationState.getState().put(i, new MethodInvocationEntry<>(SET_SHORT_INT_I_SHORT_I1, new Object[] {i1}));
+        byte[] bArr = new byte[Short.BYTES];
+        ByteUtils.writeShort(bArr, 0, i1);
+        methodInvocationState.getStateAsByteArray().put(i, bArr);
     }
 
     @Override
     public void setInt(int i, int i1) throws SQLException {
         methodInvocationState.getState().put(i, new MethodInvocationEntry<>(SET_INT_INT_I_INT_I1, new Object[] {i1}));
+        byte[] bArr = new byte[Integer.BYTES];
+        ByteUtils.writeInt(bArr, 0, i1);
+        methodInvocationState.getStateAsByteArray().put(i, bArr);
     }
 
     @Override
     public void setLong(int i, long l) throws SQLException {
         methodInvocationState.getState().put(i, new MethodInvocationEntry<>(SET_LONG_INT_I_LONG_L, new Object[] {l}));
+        byte[] bArr = new byte[Long.BYTES];
+        ByteUtils.writeLong(bArr, 0, l);
+        methodInvocationState.getStateAsByteArray().put(i, bArr);
     }
 
     @Override
     public void setFloat(int i, float v) throws SQLException {
         methodInvocationState.getState().put(i, new MethodInvocationEntry<>(SET_FLOAT_INT_I_FLOAT_V, new Object[] {v}));
+        int intValue = Float.floatToIntBits(v);
+        byte[] bArr = new byte[Integer.BYTES];
+        ByteUtils.writeInt(bArr, 0, intValue);
+        methodInvocationState.getStateAsByteArray().put(i, bArr);
     }
 
     @Override
     public void setDouble(int i, double v) throws SQLException {
         methodInvocationState.getState().put(i, new MethodInvocationEntry<>(SET_DOUBLE_INT_I_DOUBLE_V, new Object[] {v}));
+        long longValue = Double.doubleToLongBits(v);
+        byte[] bArr = new byte[Long.BYTES];
+        ByteUtils.writeLong(bArr, 0, longValue);
+        methodInvocationState.getStateAsByteArray().put(i, bArr);
     }
 
     @Override
     public void setBigDecimal(int i, BigDecimal bigDecimal) throws SQLException {
         methodInvocationState.getState().put(i, new MethodInvocationEntry<>(SET_BIGDECIMAL_INT_I_BIGDECIMAL_BIGDECIMAL, new Object[] {bigDecimal}));
+        if (bigDecimal == null) {
+            methodInvocationState.getStateAsByteArray().put(i, null);
+        } else {
+            // TODO
+        }
     }
 
     @Override
     public void setString(int i, String s) throws SQLException {
         methodInvocationState.getState().put(i, new MethodInvocationEntry<>(SET_STRING_INT_I_STRING_S, new Object[] {s}));
+        if (s == null) {
+            methodInvocationState.getStateAsByteArray().put(i, null);
+        } else {
+            methodInvocationState.getStateAsByteArray().put(i, s.getBytes(StandardCharsets.UTF_8));
+        }
     }
 
     @Override
     public void setBytes(int i, byte[] bytes) throws SQLException {
         methodInvocationState.getState().put(i, new MethodInvocationEntry<>(SET_BYTES_INT_I_BYTEARR_BYTES, new Object[] {bytes}));
+        if (bytes == null) {
+            methodInvocationState.getStateAsByteArray().put(i, null);
+        } else {
+            methodInvocationState.getStateAsByteArray().put(i, bytes);
+        }
     }
 
     @Override
     public void setDate(int i, Date date) throws SQLException {
         methodInvocationState.getState().put(i, new MethodInvocationEntry<>(SET_DATE_INT_I_DATE_DATE, new Object[] {date}));
+        if (date == null) {
+            methodInvocationState.getStateAsByteArray().put(i, null);
+        } else {
+            // TODO
+        }
     }
 
     @Override
     public void setTime(int i, Time time) throws SQLException {
         methodInvocationState.getState().put(i, new MethodInvocationEntry<>(SET_TIME_INT_I_TIME_TIME, new Object[] {time}));
+        if (time == null) {
+            methodInvocationState.getStateAsByteArray().put(i, null);
+        } else {
+            // TODO
+        }
     }
 
     @Override
     public void setTimestamp(int i, Timestamp timestamp) throws SQLException {
         methodInvocationState.getState().put(i, new MethodInvocationEntry<>(SET_TIMESTAMP_INT_I_TIMESTAMP_TIMESTAMP, new Object[] {timestamp}));
+        if (timestamp == null) {
+            methodInvocationState.getStateAsByteArray().put(i, null);
+        } else {
+            // TODO
+        }
     }
 
     @Override
@@ -234,6 +286,11 @@ public class MuxPreparedStatement extends MuxStatement implements PreparedStatem
                 SET_ASCIISTREAM_INT_I_INPUTSTREAM_INPUTSTREAM_INT_I1,
                 new Object[] {inputStream, i1}
         ));
+        if (inputStream == null) {
+            methodInvocationState.getStateAsByteArray().put(i, null);
+        } else {
+            // TODO
+        }
     }
 
     /**
@@ -246,6 +303,11 @@ public class MuxPreparedStatement extends MuxStatement implements PreparedStatem
                 SET_UNICODESTREAM_INT_I_INPUTSTREAM_INPUTSTREAM_INT_I1,
                 new Object[] {inputStream, i1}
         ));
+        if (inputStream == null) {
+            methodInvocationState.getStateAsByteArray().put(i, null);
+        } else {
+            // TODO
+        }
     }
 
     @Override
@@ -254,16 +316,31 @@ public class MuxPreparedStatement extends MuxStatement implements PreparedStatem
                 SET_BINARYSTREAM_INT_I_INPUTSTREAM_INPUTSTREAM_INT_I1,
                 new Object[] {inputStream, i1}
         ));
+        if (inputStream == null) {
+            methodInvocationState.getStateAsByteArray().put(i, null);
+        } else {
+            // TODO
+        }
     }
 
     @Override
     public void setObject(int i, Object o, int i1) throws SQLException {
         methodInvocationState.getState().put(i, new MethodInvocationEntry<>(SET_OBJECT_INT_I_OBJECT_O_INT_I1, new Object[] {o, i1}));
+        if (o == null) {
+            methodInvocationState.getStateAsByteArray().put(i, null);
+        } else {
+            // TODO
+        }
     }
 
     @Override
     public void setObject(int i, Object o) throws SQLException {
         methodInvocationState.getState().put(i, new MethodInvocationEntry<>(SET_OBJECT_INT_I_OBJECT_O, new Object[] {o}));
+        if (o == null) {
+            methodInvocationState.getStateAsByteArray().put(i, null);
+        } else {
+            // TODO
+        }
     }
 
     @Override
@@ -272,26 +349,61 @@ public class MuxPreparedStatement extends MuxStatement implements PreparedStatem
                 SET_CHARACTERSTREAM_INT_I_READER_READER_INT_I1,
                 new Object[] {reader, i1}
         ));
+        if (reader == null) {
+            methodInvocationState.getStateAsByteArray().put(i, null);
+        } else {
+            // TODO
+        }
     }
 
     @Override
     public void setRef(int i, Ref ref) throws SQLException {
         methodInvocationState.getState().put(i, new MethodInvocationEntry<>(SET_REF_INT_I_REF_REF, new Object[] {ref}));
+        if (ref == null) {
+            methodInvocationState.getStateAsByteArray().put(i, null);
+        } else {
+            // TODO
+        }
     }
 
     @Override
     public void setBlob(int i, Blob blob) throws SQLException {
         methodInvocationState.getState().put(i, new MethodInvocationEntry<>(SET_BLOB_INT_I_BLOB_BLOB, new Object[] {blob}));
+        if (blob == null) {
+            methodInvocationState.getStateAsByteArray().put(i, null);
+        } else {
+            try {
+                byte[] bArr = IOUtils.streamToBytes(blob.getBinaryStream(), blob.length());
+                methodInvocationState.getStateAsByteArray().put(i, bArr);
+            } catch (IOException e) {
+                throw new SQLException(e);
+            }
+        }
     }
 
     @Override
     public void setClob(int i, Clob clob) throws SQLException {
         methodInvocationState.getState().put(i, new MethodInvocationEntry<>(SET_CLOB_INT_I_CLOB_CLOB, new Object[] {clob}));
+        if (clob == null) {
+            methodInvocationState.getStateAsByteArray().put(i, null);
+        } else {
+            try {
+                byte[] bArr = IOUtils.readerToBytes(clob.getCharacterStream(), clob.length());
+                methodInvocationState.getStateAsByteArray().put(i, bArr);
+            } catch (IOException e) {
+                throw new SQLException(e);
+            }
+        }
     }
 
     @Override
     public void setArray(int i, Array array) throws SQLException {
         methodInvocationState.getState().put(i, new MethodInvocationEntry<>(SET_ARRAY_INT_I_ARRAY_ARRAY, new Object[] {array}));
+        if (array == null) {
+            methodInvocationState.getStateAsByteArray().put(i, null);
+        } else {
+            // TODO
+        }
     }
 
     @Override
@@ -300,6 +412,11 @@ public class MuxPreparedStatement extends MuxStatement implements PreparedStatem
                 SET_DATE_INT_I_DATE_DATE_CALENDAR_CALENDAR,
                 new Object[] {date, calendar})
         );
+        if (date == null) {
+            methodInvocationState.getStateAsByteArray().put(i, null);
+        } else {
+            // TODO
+        }
     }
 
     @Override
@@ -308,6 +425,11 @@ public class MuxPreparedStatement extends MuxStatement implements PreparedStatem
                 SET_TIME_INT_I_TIME_TIME_CALENDAR_CALENDAR,
                 new Object[] {time, calendar})
         );
+        if (time == null) {
+            methodInvocationState.getStateAsByteArray().put(i, null);
+        } else {
+            // TODO
+        }
     }
 
     @Override
@@ -316,6 +438,11 @@ public class MuxPreparedStatement extends MuxStatement implements PreparedStatem
                 SET_TIMESTAMP_INT_I_TIMESTAMP_TIMESTAMP_CALENDAR_CALENDAR,
                 new Object[] {timestamp, calendar})
         );
+        if (timestamp == null) {
+            methodInvocationState.getStateAsByteArray().put(i, null);
+        } else {
+            // TODO
+        }
     }
 
     @Override
@@ -324,21 +451,34 @@ public class MuxPreparedStatement extends MuxStatement implements PreparedStatem
                 SET_NULL_INT_I_INT_I1_STRING_S,
                 new Object[] {i1, s})
         );
+        methodInvocationState.getStateAsByteArray().put(i, null);
     }
 
     @Override
     public void setURL(int i, URL url) throws SQLException {
         methodInvocationState.getState().put(i, new MethodInvocationEntry<>(SET_URL_INT_I_URL_URL, new Object[] {url}));
+        if (url == null) {
+            methodInvocationState.getStateAsByteArray().put(i, null);
+        } else {
+            methodInvocationState.getStateAsByteArray().put(i, url.toString().getBytes(StandardCharsets.UTF_8));
+        }
     }
 
     @Override
     public void setRowId(int i, RowId rowId) throws SQLException {
-        methodInvocationState.getState().put(i, new MethodInvocationEntry<>(SET_ROWID_INT_I_ROWID_ROWID, new Object[] {rowId}));
+        // will not be supported
+        throw new SQLException(OPERATION_NOT_SUPPORTED);
     }
 
     @Override
     public void setNString(int i, String s) throws SQLException {
         methodInvocationState.getState().put(i, new MethodInvocationEntry<>(SET_NSTRING_INT_I_STRING_S, new Object[] {s}));
+        if (s == null) {
+            methodInvocationState.getStateAsByteArray().put(i, null);
+        } else {
+            methodInvocationState.getStateAsByteArray().put(i, s.getBytes(StandardCharsets.UTF_8));
+        }
+
     }
 
     @Override
@@ -347,11 +487,31 @@ public class MuxPreparedStatement extends MuxStatement implements PreparedStatem
                 SET_NCHARACTERSTREAM_INT_I_READER_READER_LONG_L,
                 new Object[] {reader, l})
         );
+        if (reader == null) {
+            methodInvocationState.getStateAsByteArray().put(i, null);
+        } else {
+            try {
+                byte[] bArr = IOUtils.readerToBytes(reader, l);
+                methodInvocationState.getStateAsByteArray().put(i, bArr);
+            } catch (IOException e) {
+                throw new SQLException(e);
+            }
+        }
     }
 
     @Override
     public void setNClob(int i, NClob nClob) throws SQLException {
         methodInvocationState.getState().put(i, new MethodInvocationEntry<>(SET_NCLOB_INT_I_NCLOB_NCLOB, new Object[] {nClob}));
+        if (nClob == null) {
+            methodInvocationState.getStateAsByteArray().put(i, null);
+        } else {
+            try {
+                byte[] bArr = IOUtils.readerToBytes(nClob.getCharacterStream(), nClob.length());
+                methodInvocationState.getStateAsByteArray().put(i, bArr);
+            } catch (IOException e) {
+                throw new SQLException(e);
+            }
+        }
     }
 
     @Override
@@ -360,6 +520,16 @@ public class MuxPreparedStatement extends MuxStatement implements PreparedStatem
                 SET_CLOB_INT_I_READER_READER_LONG_L,
                 new Object[] {reader, l})
         );
+        if (reader == null) {
+            methodInvocationState.getStateAsByteArray().put(i, null);
+        } else {
+            try {
+                byte[] bArr = IOUtils.readerToBytes(reader, l);
+                methodInvocationState.getStateAsByteArray().put(i, bArr);
+            } catch (IOException e) {
+                throw new SQLException(e);
+            }
+        }
     }
 
     @Override
@@ -368,6 +538,16 @@ public class MuxPreparedStatement extends MuxStatement implements PreparedStatem
                 SET_BLOB_INT_I_INPUTSTREAM_INPUTSTREAM_LONG_L,
                 new Object[] {inputStream, l})
         );
+        if (inputStream == null) {
+            methodInvocationState.getStateAsByteArray().put(i, null);
+        } else {
+            try {
+                byte[] bArr = IOUtils.streamToBytes(inputStream, l);
+                methodInvocationState.getStateAsByteArray().put(i, bArr);
+            } catch (IOException e) {
+                throw new SQLException(e);
+            }
+        }
     }
 
     @Override
@@ -376,11 +556,26 @@ public class MuxPreparedStatement extends MuxStatement implements PreparedStatem
                 SET_NCLOB_INT_I_READER_READER_LONG_L,
                 new Object[] {reader, l})
         );
+        if (reader == null) {
+            methodInvocationState.getStateAsByteArray().put(i, null);
+        } else {
+            try {
+                byte[] bArr = IOUtils.readerToBytes(reader, l);
+                methodInvocationState.getStateAsByteArray().put(i, bArr);
+            } catch (IOException e) {
+                throw new SQLException(e);
+            }
+        }
     }
 
     @Override
     public void setSQLXML(int i, SQLXML sqlxml) throws SQLException {
         methodInvocationState.getState().put(i, new MethodInvocationEntry<>(SET_SQLXML_INT_I_SQLXML_SQLXML, new Object[] {sqlxml}));
+        if (sqlxml == null) {
+            methodInvocationState.getStateAsByteArray().put(i, null);
+        } else {
+            // TODO
+        }
     }
 
     @Override
@@ -389,6 +584,11 @@ public class MuxPreparedStatement extends MuxStatement implements PreparedStatem
                 SET_OBJECT_INT_I_OBJECT_O_INT_I1_INT_I2,
                 new Object[] {o, i1, i2})
         );
+        if (o == null) {
+            methodInvocationState.getStateAsByteArray().put(i, null);
+        } else {
+            // TODO
+        }
     }
 
     @Override
@@ -397,6 +597,16 @@ public class MuxPreparedStatement extends MuxStatement implements PreparedStatem
                 SET_ASCIISTREAM_INT_I_INPUTSTREAM_INPUTSTREAM_LONG_L,
                 new Object[] {inputStream, l})
         );
+        if (inputStream == null) {
+            methodInvocationState.getStateAsByteArray().put(i, null);
+        } else {
+            try {
+                byte[] bArr = IOUtils.streamToBytes(inputStream, l);
+                methodInvocationState.getStateAsByteArray().put(i, bArr);
+            } catch (IOException e) {
+                throw new SQLException(e);
+            }
+        }
     }
 
     @Override
@@ -405,6 +615,16 @@ public class MuxPreparedStatement extends MuxStatement implements PreparedStatem
                 SET_BINARYSTREAM_INT_I_INPUTSTREAM_INPUTSTREAM_LONG_L,
                 new Object[] {inputStream, l})
         );
+        if (inputStream == null) {
+            methodInvocationState.getStateAsByteArray().put(i, null);
+        } else {
+            try {
+                byte[] bArr = IOUtils.streamToBytes(inputStream, l);
+                methodInvocationState.getStateAsByteArray().put(i, bArr);
+            } catch (IOException e) {
+                throw new SQLException(e);
+            }
+        }
     }
 
     @Override
@@ -413,41 +633,121 @@ public class MuxPreparedStatement extends MuxStatement implements PreparedStatem
                 SET_CHARACTERSTREAM_INT_I_READER_READER_LONG_L,
                 new Object[] {reader, l})
         );
+        if (reader == null) {
+            methodInvocationState.getStateAsByteArray().put(i, null);
+        } else {
+            try {
+                byte[] bArr = IOUtils.readerToBytes(reader, l);
+                methodInvocationState.getStateAsByteArray().put(i, bArr);
+            } catch (IOException e) {
+                throw new SQLException(e);
+            }
+        }
     }
 
     @Override
     public void setAsciiStream(int i, InputStream inputStream) throws SQLException {
         methodInvocationState.getState().put(i, new MethodInvocationEntry<>(SET_ASCIISTREAM_INT_I_INPUTSTREAM_INPUTSTREAM, new Object[] {inputStream}));
+        if (inputStream == null) {
+            methodInvocationState.getStateAsByteArray().put(i, null);
+        } else {
+            try {
+                byte[] bArr = IOUtils.streamToBytes(inputStream);
+                methodInvocationState.getStateAsByteArray().put(i, bArr);
+            } catch (IOException e) {
+                throw new SQLException(e);
+            }
+        }
     }
 
     @Override
     public void setBinaryStream(int i, InputStream inputStream) throws SQLException {
         methodInvocationState.getState().put(i, new MethodInvocationEntry<>(SET_BINARYSTREAM_INT_I_INPUTSTREAM_INPUTSTREAM, new Object[] {inputStream}));
+        if (inputStream == null) {
+            methodInvocationState.getStateAsByteArray().put(i, null);
+        } else {
+            try {
+                byte[] bArr = IOUtils.streamToBytes(inputStream);
+                methodInvocationState.getStateAsByteArray().put(i, bArr);
+            } catch (IOException e) {
+                throw new SQLException(e);
+            }
+        }
     }
 
     @Override
     public void setCharacterStream(int i, Reader reader) throws SQLException {
         methodInvocationState.getState().put(i, new MethodInvocationEntry<>(SET_CHARACTERSTREAM_INT_I_READER_READER, new Object[] {reader}));
+        if (reader == null) {
+            methodInvocationState.getStateAsByteArray().put(i, null);
+        } else {
+            try {
+                byte[] bArr = IOUtils.readerToBytes(reader);
+                methodInvocationState.getStateAsByteArray().put(i, bArr);
+            } catch (IOException e) {
+                throw new SQLException(e);
+            }
+        }
     }
 
     @Override
     public void setNCharacterStream(int i, Reader reader) throws SQLException {
         methodInvocationState.getState().put(i, new MethodInvocationEntry<>(SET_NCHARACTERSTREAM_INT_I_READER_READER, new Object[] {reader}));
+        if (reader == null) {
+            methodInvocationState.getStateAsByteArray().put(i, null);
+        } else {
+            try {
+                byte[] bArr = IOUtils.readerToBytes(reader);
+                methodInvocationState.getStateAsByteArray().put(i, bArr);
+            } catch (IOException e) {
+                throw new SQLException(e);
+            }
+        }
     }
 
     @Override
     public void setClob(int i, Reader reader) throws SQLException {
         methodInvocationState.getState().put(i, new MethodInvocationEntry<>(SET_CLOB_INT_I_READER_READER, new Object[] {reader}));
+        if (reader == null) {
+            methodInvocationState.getStateAsByteArray().put(i, null);
+        } else {
+            try {
+                byte[] bArr = IOUtils.readerToBytes(reader);
+                methodInvocationState.getStateAsByteArray().put(i, bArr);
+            } catch (IOException e) {
+                throw new SQLException(e);
+            }
+        }
     }
 
     @Override
     public void setBlob(int i, InputStream inputStream) throws SQLException {
         methodInvocationState.getState().put(i, new MethodInvocationEntry<>(SET_BLOB_INT_I_INPUTSTREAM_INPUTSTREAM, new Object[] {inputStream}));
+        if (inputStream == null) {
+            methodInvocationState.getStateAsByteArray().put(i, null);
+        } else {
+            try {
+                byte[] bArr = IOUtils.streamToBytes(inputStream);
+                methodInvocationState.getStateAsByteArray().put(i, bArr);
+            } catch (IOException e) {
+                throw new SQLException(e);
+            }
+        }
     }
 
     @Override
     public void setNClob(int i, Reader reader) throws SQLException {
         methodInvocationState.getState().put(i, new MethodInvocationEntry<>(SET_NCLOB_INT_I_READER_READER, new Object[] {reader}));
+        if (reader == null) {
+            methodInvocationState.getStateAsByteArray().put(i, null);
+        } else {
+            try {
+                byte[] bArr = IOUtils.readerToBytes(reader);
+                methodInvocationState.getStateAsByteArray().put(i, bArr);
+            } catch (IOException e) {
+                throw new SQLException(e);
+            }
+        }
     }
     //-------------------------
     @Override

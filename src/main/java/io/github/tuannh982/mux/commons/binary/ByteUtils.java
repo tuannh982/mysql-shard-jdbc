@@ -69,6 +69,13 @@ public class ByteUtils {
         return ret;
     }
 
+    public static byte[] concat(byte[] l, byte[] r, int rLen) {
+        byte[] ret = new byte[l.length + r.length];
+        System.arraycopy(l, 0, ret, 0, l.length);
+        System.arraycopy(r, 0, ret, l.length, rLen);
+        return ret;
+    }
+
     public static byte[] slice(byte[] arr, int from, int to) {
         byte[] ret = new byte[to - from];
         System.arraycopy(arr, from, ret, 0, to - from);
