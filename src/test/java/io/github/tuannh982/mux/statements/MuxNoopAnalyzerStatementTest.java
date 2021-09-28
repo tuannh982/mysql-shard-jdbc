@@ -8,6 +8,7 @@ import io.github.tuannh982.mux.config.ShardConfigStore;
 import io.github.tuannh982.mux.config.ShardConfigStoreFactory;
 import io.github.tuannh982.mux.shard.analyzer.AnalyzerFactory;
 import io.github.tuannh982.mux.shard.analyzer.NoopAnalyzer;
+import io.github.tuannh982.mux.utils.StringUtils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -119,8 +120,8 @@ public class MuxNoopAnalyzerStatementTest {
         String connectionString = String.format("jdbc:mux://(127.0.0.1:12345)[keyId01]/%s?characterEncoding=UTF-8&sessionVariables=sql_mode=ANSI_QUOTES&rewriteBatchedStatements=true", database);
         Connection connection = DriverManager.getConnection(connectionString, username, password);
         Statement statement = connection.createStatement();
-        boolean b = statement.execute(sql);
-        assertTrue(b);
+        boolean isResultSetReturned = statement.execute(sql);
+        assertFalse(isResultSetReturned);
         statement.close();
         connection.close();
         // first database, according to NoopAnalyzer
@@ -129,12 +130,12 @@ public class MuxNoopAnalyzerStatementTest {
         statement = connection.createStatement();
         ResultSet resultSet = statement.executeQuery("show create table contacts;");
         assertTrue(resultSet.next());
-        assertEquals(tableName, resultSet.getString(1));
+        String readTableName = resultSet.getString(1);
+        assertEquals(tableName, readTableName);
+        String readDdl = resultSet.getString(2);
         assertTrue(
-                resultSet.getString(2).trim().toLowerCase(Locale.ROOT)
-                        .startsWith(
-                                showTableResultPrefix.toLowerCase(Locale.ROOT)
-                        )
+                StringUtils.collapseWhitespace(readDdl).toLowerCase(Locale.ROOT)
+                        .startsWith(StringUtils.collapseWhitespace(showTableResultPrefix).toLowerCase(Locale.ROOT))
         );
     }
 }
