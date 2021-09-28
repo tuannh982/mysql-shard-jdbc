@@ -95,6 +95,15 @@ public class MuxNoopAnalyzerStatementTest {
         mockedAnalyzerFactory.close();
     }
 
+    private void executeSqlNoReturn(Connection connection, String sql, boolean check) throws SQLException {
+        try (Statement statement = connection.createStatement()) {
+            boolean b = statement.execute(sql);
+            if (check) {
+                assertFalse(b);
+            }
+        }
+    }
+
     /**
      * execute(String sql)
      * create table
@@ -109,25 +118,25 @@ public class MuxNoopAnalyzerStatementTest {
                         " \"last_name\" varchar(255) NOT NULL,\n" +
                         " \"email\" varchar(255) NOT NULL,\n" +
                         " \"phone\" varchar(255) NOT NULL,";
-        String sql =
+        String connectionString = String.format("jdbc:mux://(127.0.0.1:12345)[keyId01]/%s?characterEncoding=UTF-8&sessionVariables=sql_mode=ANSI_QUOTES&rewriteBatchedStatements=true", database);
+        Connection connection = DriverManager.getConnection(connectionString, username, password);
+        //-----create table---------------------------------------------------------------------------------------------
+        executeSqlNoReturn(
+                connection,
                 "CREATE TABLE contacts (\n" +
                         "\tcontact_id integer primary key,\n" +
                         "\tfirst_name varchar(255) not null,\n" +
                         "\tlast_name varchar(255) not null,\n" +
                         "\temail varchar(255) not null unique,\n" +
                         "\tphone varchar(255) not null unique\n" +
-                        ");";
-        String connectionString = String.format("jdbc:mux://(127.0.0.1:12345)[keyId01]/%s?characterEncoding=UTF-8&sessionVariables=sql_mode=ANSI_QUOTES&rewriteBatchedStatements=true", database);
-        Connection connection = DriverManager.getConnection(connectionString, username, password);
-        Statement statement = connection.createStatement();
-        boolean isResultSetReturned = statement.execute(sql);
-        assertFalse(isResultSetReturned);
-        statement.close();
+                        ");",
+                true);
         connection.close();
+        //-----verify table creation------------------------------------------------------------------------------------
         // first database, according to NoopAnalyzer
-        connectionString = String.format("jdbc:mysql://127.0.0.1:20306/%s?characterEncoding=UTF-8&sessionVariables=sql_mode=ANSI_QUOTES&rewriteBatchedStatements=true", database);
-        connection = DriverManager.getConnection(connectionString, username, password);
-        statement = connection.createStatement();
+        String connectionStringDb1 = String.format("jdbc:mysql://127.0.0.1:20306/%s?characterEncoding=UTF-8&sessionVariables=sql_mode=ANSI_QUOTES&rewriteBatchedStatements=true", database);
+        connection = DriverManager.getConnection(connectionStringDb1, username, password);
+        Statement statement = connection.createStatement();
         ResultSet resultSet = statement.executeQuery("show create table contacts;");
         assertTrue(resultSet.next());
         String readTableName = resultSet.getString(1);
@@ -137,5 +146,42 @@ public class MuxNoopAnalyzerStatementTest {
                 StringUtils.collapseWhitespace(readDdl).toLowerCase(Locale.ROOT)
                         .startsWith(StringUtils.collapseWhitespace(showTableResultPrefix).toLowerCase(Locale.ROOT))
         );
+        //-----cleanup table--------------------------------------------------------------------------------------------
+        connection = DriverManager.getConnection(connectionString, username, password);
+        executeSqlNoReturn(connection, "drop table contacts;", false);
     }
+
+    /**
+     * executeUpdate(String sql)
+     * executeQuery(String sql)
+     * modify table
+     * insert data into table
+     * read data
+     */
+    @Test
+    public void testExecuteModifyTableAndInsert() throws SQLException {
+        String tableName = "contacts";
+        String connectionString = String.format("jdbc:mux://(127.0.0.1:12345)[keyId01]/%s?characterEncoding=UTF-8&sessionVariables=sql_mode=ANSI_QUOTES&rewriteBatchedStatements=true", database);
+        Connection connection = DriverManager.getConnection(connectionString, username, password);
+        //-----create table---------------------------------------------------------------------------------------------
+        executeSqlNoReturn(
+                connection,
+                "CREATE TABLE contacts (\n" +
+                "\tcontact_id integer primary key,\n" +
+                "\tfirst_name varchar(255) not null,\n" +
+                "\tlast_name varchar(255) not null,\n" +
+                "\temail varchar(255) not null unique,\n" +
+                "\tphone varchar(255) not null unique\n" +
+                ");",
+                false);
+        //-----modify table---------------------------------------------------------------------------------------------
+        executeSqlNoReturn(connection,"alter table contacts drop column phone, drop column email;", false);
+        executeSqlNoReturn(connection,"alter table contacts add column contact_str varchar(50);", false);
+        //-----insert data into table-----------------------------------------------------------------------------------
+        // TODO
+        //-----cleanup table--------------------------------------------------------------------------------------------
+        executeSqlNoReturn(connection, "drop table contacts;", false);
+        connection.close();
+    }
+
 }
