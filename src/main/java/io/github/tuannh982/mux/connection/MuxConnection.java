@@ -28,17 +28,17 @@ public class MuxConnection implements Connection {
 
     //-----createStatement-----
     @Override
-    public Statement createStatement() throws SQLException {
+    public Statement createStatement() {
         return new MuxStatement(this);
     }
 
     @Override
-    public Statement createStatement(int resultSetType, int resultSetConcurrency) throws SQLException {
+    public Statement createStatement(int resultSetType, int resultSetConcurrency) {
         return new MuxStatement(this, resultSetType, resultSetConcurrency);
     }
 
     @Override
-    public Statement createStatement(int resultSetType, int resultSetConcurrency, int resultSetHoldability) throws SQLException {
+    public Statement createStatement(int resultSetType, int resultSetConcurrency, int resultSetHoldability) {
         return new MuxStatement(this, resultSetType, resultSetConcurrency, resultSetHoldability);
     }
     //-------------------------
@@ -229,24 +229,14 @@ public class MuxConnection implements Connection {
     }
 
     @Override
-    public boolean isClosed() throws SQLException {
+    public boolean isClosed() {
         return internal.isClosed();
     }
     //-------------------------
 
     @Override
-    public DatabaseMetaData getMetaData() throws SQLException {
-        return null; // TODO
-    }
-
-    @Override
-    public SQLWarning getWarnings() throws SQLException {
-        return null; // TODO
-    }
-
-    @Override
-    public void clearWarnings() throws SQLException {
-        // TODO
+    public DatabaseMetaData getMetaData() {
+        return internal.getMetaData();
     }
 
     @Override
@@ -311,12 +301,23 @@ public class MuxConnection implements Connection {
 
     @Override
     public boolean isValid(int i) throws SQLException {
-        return false; // TODO
+        // TODO support later
+        throw new SQLException(Constants.OPERATION_NOT_SUPPORTED);
     }
 
     @Override
     public void abort(Executor executor) throws SQLException {
         internal.abort(executor);
+    }
+
+    @Override
+    public SQLWarning getWarnings() throws SQLException {
+        return null; // TODO
+    }
+
+    @Override
+    public void clearWarnings() throws SQLException {
+        // TODO
     }
 
     // Wrapper class methods

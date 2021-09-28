@@ -9,4 +9,8 @@ public class AnalyzerFactory {
         // TODO
         return null;
     }
+
+    public static Analyzer noop() {
+        return new NoopAnalyzer();
+    }
 }

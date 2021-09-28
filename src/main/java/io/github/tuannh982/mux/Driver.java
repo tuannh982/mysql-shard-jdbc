@@ -13,6 +13,15 @@ public class Driver implements java.sql.Driver {
     private static final Driver INSTANCE = new Driver();
     private static volatile boolean registered = false;
 
+    static {
+        try {
+            load();
+        } catch (SQLException e) {
+            throw new AssertionError(e);
+        }
+    }
+
+    @SuppressWarnings("UnusedReturnValue")
     public static synchronized Driver load() throws SQLException {
         if (!registered) {
             registered = true;

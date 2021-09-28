@@ -31,7 +31,7 @@ public class ShardOps {
         long hashValue = hash.hash(shardingKey);
         Map.Entry<Long, Integer> entry = invertedSortedMapIndex.floorEntry(hashValue);
         ShardConfig.Range foundRange = physNodeShardRanges[entry.getValue()];
-        if (hashValue >= foundRange.getFrom() && hashValue <= foundRange.getTo()) {
+        if (hashValue >= foundRange.getFrom() && hashValue < foundRange.getTo()) {
             return entry.getValue();
         } else {
             return DEFAULT_SHARD_NODE;

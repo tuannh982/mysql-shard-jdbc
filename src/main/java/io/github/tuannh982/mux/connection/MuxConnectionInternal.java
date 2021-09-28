@@ -56,6 +56,11 @@ public class MuxConnectionInternal {
         this.connections = new Connection[shardConfig.getPhysNodeCount()];
         for (int i = 0; i < shardConfig.getPhysNodeCount(); i++) {
             ShardConfig.JdbcConfig config = shardConfig.getPhysNodeJdbcConfigs()[i];
+            try {
+                Class.forName(config.getDriverClass());
+            } catch (ClassNotFoundException e) {
+                throw new SQLException("JDBC driver not found", e);
+            }
             this.connections[i] = DriverManager.getConnection(String.format(config.getJdbcTemplate(), parsedUrl.getDatabase()), parsedUrl.getProperties());
         }
         setAutoCommit(false);
@@ -355,5 +360,10 @@ public class MuxConnectionInternal {
         } finally {
             lock.unlock();
         }
+    }
+
+    public DatabaseMetaData getMetaData() {
+        // TODO
+        return null;
     }
 }
