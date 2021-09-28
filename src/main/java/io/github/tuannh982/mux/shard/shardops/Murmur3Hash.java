@@ -27,6 +27,7 @@ public class Murmur3Hash implements Hash {
         return hash(bArr);
     }
 
+    @Override
     public long hash(byte[] array) {
         int o = 0;
         int r = array.length;

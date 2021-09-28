@@ -1,5 +1,6 @@
 package io.github.tuannh982.mux.connection;
 
+import io.github.tuannh982.mux.commons.tuple.Tuple2;
 import io.github.tuannh982.mux.config.ShardConfig;
 import io.github.tuannh982.mux.config.ShardConfigStore;
 import io.github.tuannh982.mux.config.ShardConfigStoreFactory;
@@ -7,6 +8,7 @@ import io.github.tuannh982.mux.shard.analyzer.Analyzer;
 import io.github.tuannh982.mux.shard.analyzer.AnalyzerFactory;
 import io.github.tuannh982.mux.shard.shardops.Murmur3Hash;
 import io.github.tuannh982.mux.shard.shardops.ShardOps;
+import io.github.tuannh982.mux.statements.history.PreparedStatementMethodInvocationState;
 import io.github.tuannh982.mux.urlparser.ParsedUrl;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -112,38 +114,105 @@ public class MuxConnectionInternal {
         }
     }
 
-    public List<Statement> createStatement(Integer[] selectedShards) throws SQLException {
+    //-----createStatement----------------------------------------------------------------------------------------------
+    public Map<Integer, Statement> createStatement(Map<Integer, Tuple2<String, PreparedStatementMethodInvocationState>> analyzedResult) throws SQLException {
         checkVersion();
-        List<Statement> ret = new ArrayList<>();
-        if (selectedShards != null) {
-            for (int i : selectedShards) {
-                ret.add(connections[i].createStatement());
-            }
+        Map<Integer, Statement> ret = new HashMap<>();
+        for (Map.Entry<Integer, Tuple2<String, PreparedStatementMethodInvocationState>> entry : analyzedResult.entrySet()) {
+            int index = entry.getKey();
+            ret.put(index, connections[index].createStatement());
         }
         return ret;
     }
 
-    public List<Statement> createStatement(Integer[] selectedShards, int resultSetType, int resultSetConcurrency) throws SQLException {
+    public Map<Integer, Statement> createStatement(Map<Integer, Tuple2<String, PreparedStatementMethodInvocationState>> analyzedResult, int resultSetType, int resultSetConcurrency) throws SQLException {
         checkVersion();
-        List<Statement> ret = new ArrayList<>();
-        if (selectedShards != null) {
-            for (int i : selectedShards) {
-                ret.add(connections[i].createStatement(resultSetType, resultSetConcurrency));
-            }
+        Map<Integer, Statement> ret = new HashMap<>();
+        for (Map.Entry<Integer, Tuple2<String, PreparedStatementMethodInvocationState>> entry : analyzedResult.entrySet()) {
+            int index = entry.getKey();
+            ret.put(index, connections[index].createStatement(resultSetType, resultSetConcurrency));
         }
         return ret;
     }
 
-    public List<Statement> createStatement(Integer[] selectedShards, int resultSetType, int resultSetConcurrency, int resultSetHoldability) throws SQLException {
+    public Map<Integer, Statement> createStatement(Map<Integer, Tuple2<String, PreparedStatementMethodInvocationState>> analyzedResult, int resultSetType, int resultSetConcurrency, int resultSetHoldability) throws SQLException {
         checkVersion();
-        List<Statement> ret = new ArrayList<>();
-        if (selectedShards != null) {
-            for (int i : selectedShards) {
-                ret.add(connections[i].createStatement(resultSetType, resultSetConcurrency, resultSetHoldability));
-            }
+        Map<Integer, Statement> ret = new HashMap<>();
+        for (Map.Entry<Integer, Tuple2<String, PreparedStatementMethodInvocationState>> entry : analyzedResult.entrySet()) {
+            int index = entry.getKey();
+            ret.put(index, connections[index].createStatement(resultSetType, resultSetConcurrency, resultSetHoldability));
         }
         return ret;
     }
+    //------------------------------------------------------------------------------------------------------------------
+
+    //-----createPreparedStatement--------------------------------------------------------------------------------------
+    public Map<Integer, Statement> createPreparedStatement(Map<Integer, Tuple2<String, PreparedStatementMethodInvocationState>> analyzedResult) throws SQLException {
+        checkVersion();
+        Map<Integer, Statement> ret = new HashMap<>();
+        for (Map.Entry<Integer, Tuple2<String, PreparedStatementMethodInvocationState>> entry : analyzedResult.entrySet()) {
+            int index = entry.getKey();
+            String sql = entry.getValue().getA0();
+            ret.put(index, connections[index].prepareStatement(sql));
+        }
+        return ret;
+    }
+
+    public Map<Integer, Statement> createPreparedStatement(Map<Integer, Tuple2<String, PreparedStatementMethodInvocationState>> analyzedResult, int resultSetType, int resultSetConcurrency) throws SQLException {
+        checkVersion();
+        Map<Integer, Statement> ret = new HashMap<>();
+        for (Map.Entry<Integer, Tuple2<String, PreparedStatementMethodInvocationState>> entry : analyzedResult.entrySet()) {
+            int index = entry.getKey();
+            String sql = entry.getValue().getA0();
+            ret.put(index, connections[index].prepareStatement(sql, resultSetType, resultSetConcurrency));
+        }
+        return ret;
+    }
+
+    public Map<Integer, Statement> createPreparedStatement(Map<Integer, Tuple2<String, PreparedStatementMethodInvocationState>> analyzedResult, int resultSetType, int resultSetConcurrency, int resultSetHoldability) throws SQLException {
+        checkVersion();
+        Map<Integer, Statement> ret = new HashMap<>();
+        for (Map.Entry<Integer, Tuple2<String, PreparedStatementMethodInvocationState>> entry : analyzedResult.entrySet()) {
+            int index = entry.getKey();
+            String sql = entry.getValue().getA0();
+            ret.put(index, connections[index].prepareStatement(sql, resultSetType, resultSetConcurrency, resultSetHoldability));
+        }
+        return ret;
+    }
+
+    public Map<Integer, Statement> createPreparedStatement(Map<Integer, Tuple2<String, PreparedStatementMethodInvocationState>> analyzedResult, int autoGeneratedKeys) throws SQLException {
+        checkVersion();
+        Map<Integer, Statement> ret = new HashMap<>();
+        for (Map.Entry<Integer, Tuple2<String, PreparedStatementMethodInvocationState>> entry : analyzedResult.entrySet()) {
+            int index = entry.getKey();
+            String sql = entry.getValue().getA0();
+            ret.put(index, connections[index].prepareStatement(sql, autoGeneratedKeys));
+        }
+        return ret;
+    }
+
+    public Map<Integer, Statement> createPreparedStatement(Map<Integer, Tuple2<String, PreparedStatementMethodInvocationState>> analyzedResult, int[] columnIndexes) throws SQLException {
+        checkVersion();
+        Map<Integer, Statement> ret = new HashMap<>();
+        for (Map.Entry<Integer, Tuple2<String, PreparedStatementMethodInvocationState>> entry : analyzedResult.entrySet()) {
+            int index = entry.getKey();
+            String sql = entry.getValue().getA0();
+            ret.put(index, connections[index].prepareStatement(sql, columnIndexes));
+        }
+        return ret;
+    }
+
+    public Map<Integer, Statement> createPreparedStatement(Map<Integer, Tuple2<String, PreparedStatementMethodInvocationState>> analyzedResult, String[] columnNames) throws SQLException {
+        checkVersion();
+        Map<Integer, Statement> ret = new HashMap<>();
+        for (Map.Entry<Integer, Tuple2<String, PreparedStatementMethodInvocationState>> entry : analyzedResult.entrySet()) {
+            int index = entry.getKey();
+            String sql = entry.getValue().getA0();
+            ret.put(index, connections[index].prepareStatement(sql, columnNames));
+        }
+        return ret;
+    }
+    //------------------------------------------------------------------------------------------------------------------
 
     public void setAutoCommit(boolean autoCommit) throws SQLException {
         for (Connection connection : connections) {

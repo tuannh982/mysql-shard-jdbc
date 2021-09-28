@@ -6,7 +6,7 @@ import lombok.Getter;
 
 @Getter
 @AllArgsConstructor
-public enum MuxStatementInvocationMethod implements MethodInvocation {
+public enum MuxStatementMethodInvocation implements MethodInvocation {
     MAX_FIELD_SIZE(1),
     MAX_ROWS(1),
     ESCAPE_PROCESSING(1),

@@ -27,7 +27,7 @@ public class ShardOps {
         }
     }
 
-    public int apply(Object shardingKey) {
+    public int apply(byte[] shardingKey) {
         long hashValue = hash.hash(shardingKey);
         Map.Entry<Long, Integer> entry = invertedSortedMapIndex.floorEntry(hashValue);
         ShardConfig.Range foundRange = physNodeShardRanges[entry.getValue()];
