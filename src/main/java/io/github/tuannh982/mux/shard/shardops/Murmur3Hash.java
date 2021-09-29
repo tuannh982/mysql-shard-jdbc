@@ -1,10 +1,5 @@
 package io.github.tuannh982.mux.shard.shardops;
 
-import io.github.tuannh982.mux.commons.binary.ByteUtils;
-
-import java.nio.charset.StandardCharsets;
-
-@SuppressWarnings("all")
 public class Murmur3Hash implements Hash {
     @Override
     public long hash(byte[] array) {
@@ -13,7 +8,8 @@ public class Murmur3Hash implements Hash {
 
         long h1 = 0L;
         long h2 = 0L;
-        long k1, k2;
+        long k1;
+        long k2;
 
         for (; r >= 16; r -= 16) {
             k1 = getLong(array, o);
@@ -92,7 +88,6 @@ public class Murmur3Hash implements Hash {
         h2 = fmix64(h2);
 
         h1 += h2;
-        //h2 += h1;
 
         // padToLong()
         return h1;

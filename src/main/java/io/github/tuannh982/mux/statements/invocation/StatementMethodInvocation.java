@@ -4,17 +4,14 @@ import io.github.tuannh982.mux.statements.MuxStatementMethodInvocation;
 import lombok.Getter;
 
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Getter
 public class StatementMethodInvocation {
     private final Map<MuxStatementMethodInvocation, Object[]> state;
 
     public StatementMethodInvocation() {
-        this.state = new HashMap<>();
+        this.state = new EnumMap<>(MuxStatementMethodInvocation.class);
     }
 
     public void clear() {
