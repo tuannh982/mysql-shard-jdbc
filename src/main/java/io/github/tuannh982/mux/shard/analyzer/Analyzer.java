@@ -7,5 +7,9 @@ import io.github.tuannh982.mux.statements.invocation.PreparedStatementMethodInvo
 import java.util.Map;
 
 public interface Analyzer {
-    Map<Integer, Tuple2<String, PreparedStatementMethodInvocation>> analyze(String sql, boolean isPrepared, PreparedStatementMethodInvocation values, ShardOps shardOps);
+    Map<Integer, Tuple2<String, PreparedStatementMethodInvocation>> analyze(
+            String sql,
+            PreparedStatementMethodInvocation preparedMethodInvocation,
+            ShardOps shardOps
+    );
 }

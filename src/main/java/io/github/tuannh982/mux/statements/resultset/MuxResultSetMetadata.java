@@ -5,7 +5,7 @@ import java.sql.SQLException;
 import java.util.List;
 
 public class MuxResultSetMetadata implements ResultSetMetaData {
-    private List<ResultSetMetaData> metaDataList;
+    private final List<ResultSetMetaData> metaDataList;
 
     public MuxResultSetMetadata(List<ResultSetMetaData> metaDataList) {
         this.metaDataList = metaDataList;

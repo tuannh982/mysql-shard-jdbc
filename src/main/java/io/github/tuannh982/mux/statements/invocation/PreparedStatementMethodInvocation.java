@@ -9,15 +9,15 @@ import java.util.Map;
 @Getter
 public class PreparedStatementMethodInvocation {
     private final Map<Integer, MethodInvocationEntry<MuxPreparedStatementMethodInvocation>> state;
-    private final Map<Integer, byte[]> brState;
+    private final Map<Integer, byte[]> valueMap;
 
     public PreparedStatementMethodInvocation() {
         this.state = new HashMap<>();
-        this.brState = new HashMap<>();
+        this.valueMap = new HashMap<>();
     }
 
     public void clear() {
         this.state.clear();
-        this.brState.clear();
+        this.valueMap.clear();
     }
 }

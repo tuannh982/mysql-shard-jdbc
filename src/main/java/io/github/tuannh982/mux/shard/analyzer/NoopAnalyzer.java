@@ -9,9 +9,14 @@ import java.util.Map;
 
 public class NoopAnalyzer implements Analyzer {
     @Override
-    public Map<Integer, Tuple2<String, PreparedStatementMethodInvocation>> analyze(String sql, boolean isPrepared, PreparedStatementMethodInvocation values, ShardOps shardOps) {
+    public Map<Integer, Tuple2<String, PreparedStatementMethodInvocation>> analyze(
+            String sql,
+            PreparedStatementMethodInvocation preparedMethodInvocation,
+            ShardOps shardOps
+    ) {
         Map<Integer, Tuple2<String, PreparedStatementMethodInvocation>> ret = new HashMap<>();
-        ret.put(0, Tuple2.of(sql, values));
+        // directly route to the first shard
+        ret.put(0, Tuple2.of(sql, preparedMethodInvocation));
         return ret;
     }
 }

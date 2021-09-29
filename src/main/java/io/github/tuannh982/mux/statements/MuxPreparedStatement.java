@@ -282,7 +282,7 @@ public class MuxPreparedStatement extends MuxStatement implements PreparedStatem
     public ResultSet executeQuery() throws SQLException {
         synchronized (this) {
             Map<Integer, Tuple2<String, PreparedStatementMethodInvocation>> analyzedResult =
-                    analyzer.analyze(sql, true, methodInvocationState, shardOps);
+                    analyzer.analyze(sql, methodInvocationState, shardOps);
             preparedStatementPreparation(analyzedResult);
             playback();
             List<ResultSet> resultSets = new ArrayList<>(analyzedResult.size());
@@ -302,7 +302,7 @@ public class MuxPreparedStatement extends MuxStatement implements PreparedStatem
     public int executeUpdate() throws SQLException {
         synchronized (this) {
             Map<Integer, Tuple2<String, PreparedStatementMethodInvocation>> analyzedResult =
-                    analyzer.analyze(sql, true, methodInvocationState, shardOps);
+                    analyzer.analyze(sql, methodInvocationState, shardOps);
             preparedStatementPreparation(analyzedResult);
             playback();
             int affected = 0;
@@ -322,7 +322,7 @@ public class MuxPreparedStatement extends MuxStatement implements PreparedStatem
     public boolean execute() throws SQLException {
         synchronized (this) {
             Map<Integer, Tuple2<String, PreparedStatementMethodInvocation>> analyzedResult =
-                    analyzer.analyze(sql, true, methodInvocationState, shardOps);
+                    analyzer.analyze(sql, methodInvocationState, shardOps);
             preparedStatementPreparation(analyzedResult);
             playback();
             boolean ret = false;
@@ -680,11 +680,11 @@ public class MuxPreparedStatement extends MuxStatement implements PreparedStatem
     //-------------------------
     private void internalSetInputStream(int i, InputStream inputStream, long l) throws SQLException {
         if (inputStream == null) {
-            methodInvocationState.getBrState().put(i, null);
+            methodInvocationState.getValueMap().put(i, null);
         } else {
             try {
                 byte[] bArr = IOUtils.streamToBytes(inputStream, l);
-                methodInvocationState.getBrState().put(i, bArr);
+                methodInvocationState.getValueMap().put(i, bArr);
             } catch (IOException e) {
                 throw new SQLException(e);
             }
@@ -693,11 +693,11 @@ public class MuxPreparedStatement extends MuxStatement implements PreparedStatem
 
     private void internalSetReader(int i, Reader reader, long l) throws SQLException {
         if (reader == null) {
-            methodInvocationState.getBrState().put(i, null);
+            methodInvocationState.getValueMap().put(i, null);
         } else {
             try {
                 byte[] bArr = IOUtils.readerToBytes(reader, l);
-                methodInvocationState.getBrState().put(i, bArr);
+                methodInvocationState.getValueMap().put(i, bArr);
             } catch (IOException e) {
                 throw new SQLException(e);
             }
@@ -707,73 +707,73 @@ public class MuxPreparedStatement extends MuxStatement implements PreparedStatem
     @SuppressWarnings({"java:S1144", "java:S3776"})
     private void internalSetObject(int i, Object o) throws SQLException {
         if (o == null) {
-            methodInvocationState.getBrState().put(i, null);
+            methodInvocationState.getValueMap().put(i, null);
         } else if (o instanceof Boolean) {
             Boolean b = (Boolean) o;
-            methodInvocationState.getBrState().put(i, new byte[] {(byte) (Boolean.TRUE.equals(b) ? 1 : 0)});
+            methodInvocationState.getValueMap().put(i, new byte[] {(byte) (Boolean.TRUE.equals(b) ? 1 : 0)});
         } else if (o instanceof Byte) {
             Byte b = (Byte) o;
-            methodInvocationState.getBrState().put(i, new byte[] {b});
+            methodInvocationState.getValueMap().put(i, new byte[] {b});
         } else if (o instanceof Short) {
             Short i1 = (Short) o;
             byte[] bArr = new byte[Short.BYTES];
             ByteUtils.writeShort(bArr, 0, i1);
-            methodInvocationState.getBrState().put(i, bArr);
+            methodInvocationState.getValueMap().put(i, bArr);
         } else if (o instanceof Integer) {
             Integer i1 = (Integer) o;
             byte[] bArr = new byte[Integer.BYTES];
             ByteUtils.writeInt(bArr, 0, i1);
-            methodInvocationState.getBrState().put(i, bArr);
+            methodInvocationState.getValueMap().put(i, bArr);
         } else if (o instanceof Long) {
             Long l = (Long) o;
             byte[] bArr = new byte[Long.BYTES];
             ByteUtils.writeLong(bArr, 0, l);
-            methodInvocationState.getBrState().put(i, bArr);
+            methodInvocationState.getValueMap().put(i, bArr);
         } else if (o instanceof Float) {
             Float v = (Float) o;
             int intValue = Float.floatToIntBits(v);
             byte[] bArr = new byte[Integer.BYTES];
             ByteUtils.writeInt(bArr, 0, intValue);
-            methodInvocationState.getBrState().put(i, bArr);
+            methodInvocationState.getValueMap().put(i, bArr);
         } else if (o instanceof Double) {
             Double v = (Double) o;
             long longValue = Double.doubleToLongBits(v);
             byte[] bArr = new byte[Long.BYTES];
             ByteUtils.writeLong(bArr, 0, longValue);
-            methodInvocationState.getBrState().put(i, bArr);
+            methodInvocationState.getValueMap().put(i, bArr);
         } else if (o instanceof BigDecimal) {
             BigDecimal bigDecimal = (BigDecimal) o;
             byte[] bArr = bigDecimal.unscaledValue().toByteArray();
-            methodInvocationState.getBrState().put(i, bArr);
+            methodInvocationState.getValueMap().put(i, bArr);
         } else if (o instanceof String) {
             String s = (String) o;
-            methodInvocationState.getBrState().put(i, s.getBytes(StandardCharsets.UTF_8));
+            methodInvocationState.getValueMap().put(i, s.getBytes(StandardCharsets.UTF_8));
         } else if (o instanceof byte[]) {
             byte[] bytes = (byte[]) o;
-            methodInvocationState.getBrState().put(i, bytes);
+            methodInvocationState.getValueMap().put(i, bytes);
         } else if (o instanceof Date) {
             Date date = (Date) o;
             long ts = date.getTime();
             byte[] bArr = new byte[Long.BYTES];
             ByteUtils.writeLong(bArr, 0, ts);
-            methodInvocationState.getBrState().put(i, bArr);
+            methodInvocationState.getValueMap().put(i, bArr);
         } else if (o instanceof Time) {
             Time date = (Time) o;
             long ts = date.getTime();
             byte[] bArr = new byte[Long.BYTES];
             ByteUtils.writeLong(bArr, 0, ts);
-            methodInvocationState.getBrState().put(i, bArr);
+            methodInvocationState.getValueMap().put(i, bArr);
         } else if (o instanceof Timestamp) {
             Timestamp date = (Timestamp) o;
             long ts = date.getTime();
             byte[] bArr = new byte[Long.BYTES];
             ByteUtils.writeLong(bArr, 0, ts);
-            methodInvocationState.getBrState().put(i, bArr);
+            methodInvocationState.getValueMap().put(i, bArr);
         } else if (o instanceof InputStream) {
             try {
                 InputStream inputStream = (InputStream) o;
                 byte[] bArr = IOUtils.streamToBytes(inputStream);
-                methodInvocationState.getBrState().put(i, bArr);
+                methodInvocationState.getValueMap().put(i, bArr);
             } catch (IOException e) {
                 throw new SQLException(e);
             }
@@ -781,7 +781,7 @@ public class MuxPreparedStatement extends MuxStatement implements PreparedStatem
             try {
                 Reader reader = (Reader) o;
                 byte[] bArr = IOUtils.readerToBytes(reader);
-                methodInvocationState.getBrState().put(i, bArr);
+                methodInvocationState.getValueMap().put(i, bArr);
             } catch (IOException e) {
                 throw new SQLException(e);
             }
@@ -792,7 +792,7 @@ public class MuxPreparedStatement extends MuxStatement implements PreparedStatem
             try {
                 Blob blob = (Blob) o;
                 byte[] bArr = IOUtils.streamToBytes(blob.getBinaryStream(), blob.length());
-                methodInvocationState.getBrState().put(i, bArr);
+                methodInvocationState.getValueMap().put(i, bArr);
             } catch (IOException e) {
                 throw new SQLException(e);
             }
@@ -800,7 +800,7 @@ public class MuxPreparedStatement extends MuxStatement implements PreparedStatem
             try {
                 NClob clob = (NClob) o;
                 byte[] bArr = IOUtils.readerToBytes(clob.getCharacterStream(), clob.length());
-                methodInvocationState.getBrState().put(i, bArr);
+                methodInvocationState.getValueMap().put(i, bArr);
             } catch (IOException e) {
                 throw new SQLException(e);
             }
@@ -808,7 +808,7 @@ public class MuxPreparedStatement extends MuxStatement implements PreparedStatem
             try {
                 Clob clob = (Clob) o;
                 byte[] bArr = IOUtils.readerToBytes(clob.getCharacterStream(), clob.length());
-                methodInvocationState.getBrState().put(i, bArr);
+                methodInvocationState.getValueMap().put(i, bArr);
             } catch (IOException e) {
                 throw new SQLException(e);
             }
@@ -817,7 +817,7 @@ public class MuxPreparedStatement extends MuxStatement implements PreparedStatem
             throw new SQLException(OPERATION_NOT_SUPPORTED);
         } else if (o instanceof URL) {
             URL url = (URL) o;
-            methodInvocationState.getBrState().put(i, url.toString().getBytes(StandardCharsets.UTF_8));
+            methodInvocationState.getValueMap().put(i, url.toString().getBytes(StandardCharsets.UTF_8));
         } else if (o instanceof RowId) {
             // will not be supported
             throw new SQLException(OPERATION_NOT_SUPPORTED);
@@ -825,7 +825,7 @@ public class MuxPreparedStatement extends MuxStatement implements PreparedStatem
             try {
                 SQLXML sqlxml = (SQLXML) o;
                 byte[] bArr = IOUtils.readerToBytes(sqlxml.getCharacterStream());
-                methodInvocationState.getBrState().put(i, bArr);
+                methodInvocationState.getValueMap().put(i, bArr);
             } catch (IOException e) {
                 throw new SQLException(e);
             }
@@ -841,13 +841,13 @@ public class MuxPreparedStatement extends MuxStatement implements PreparedStatem
 
     @Override
     public void addBatch() throws SQLException {
-        // will not be supported
+        // TODO support later
         throw new SQLException(OPERATION_NOT_SUPPORTED);
     }
 
     @Override
     public ResultSetMetaData getMetaData() throws SQLException {
-        return null; // TODO
+        return resultSet.getMetaData();
     }
 
     @Override
