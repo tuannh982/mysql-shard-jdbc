@@ -9,6 +9,7 @@ import io.github.tuannh982.mux.shard.analyzer.AnalyzerFactory;
 import io.github.tuannh982.mux.shard.analyzer.NoopAnalyzer;
 import io.github.tuannh982.mux.utils.StringUtils;
 import org.apache.commons.lang3.RandomStringUtils;
+import org.joda.time.Duration;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -35,6 +36,7 @@ public class MuxNoopAnalyzerStatementTest {
     @RegisterExtension
     public static DockerComposeExtension docker = DockerComposeExtension.builder()
             .file("src/test/resources/db-only/docker-compose.yaml")
+            .nativeServiceHealthCheckTimeout(Duration.standardMinutes(5))
             .build();
 
     @SuppressWarnings("ResultOfMethodCallIgnored")
