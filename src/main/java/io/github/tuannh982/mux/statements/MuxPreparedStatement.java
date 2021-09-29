@@ -291,7 +291,7 @@ public class MuxPreparedStatement extends MuxStatement implements PreparedStatem
                 PreparedStatementMethodInvocation analyzed = analyzedResult.get(index).getA1();
                 PreparedStatement statement = (PreparedStatement) entry.getValue();
                 playback(analyzed, statement);
-                statement.executeQuery();
+                resultSets.add(statement.executeQuery());
             }
             resultSet = new MuxResultSet(this, resultSets);
             return resultSet;

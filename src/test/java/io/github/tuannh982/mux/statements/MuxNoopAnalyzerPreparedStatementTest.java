@@ -18,6 +18,8 @@ import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
 import java.sql.*;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.Locale;
 import java.util.Random;
 
@@ -25,7 +27,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 
 @SuppressWarnings("java:S5786")
-public class MuxNoopAnalyzerStatementTest {
+public class MuxNoopAnalyzerPreparedStatementTest {
     private static final Random random = new Random();
     private static MockedStatic<ShardConfigStoreFactory> mockedShardConfigStoreFactory;
     private static MockedStatic<AnalyzerFactory> mockedAnalyzerFactory;
@@ -98,84 +100,15 @@ public class MuxNoopAnalyzerStatementTest {
         mockedAnalyzerFactory.close();
     }
 
-    private void executeSqlNoReturn(Connection connection, String sql, boolean check) throws SQLException {
+    private void executeSqlNoReturn(Connection connection, String sql) throws SQLException {
         try (Statement statement = connection.createStatement()) {
-            boolean b = statement.execute(sql);
-            if (check) {
-                assertFalse(b);
-            }
-        }
-    }
-
-    private int executeUpdateSqlNoReturn(Connection connection, String sql) throws SQLException {
-        try (Statement statement = connection.createStatement()) {
-            return statement.executeUpdate(sql);
+            statement.execute(sql);
         }
     }
 
     /**
-     * execute(String sql)
-     * create table
-     */
-    @Test
-    public void testExecuteCreateTable() throws SQLException {
-        String tableName = "contacts";
-        String connectionString = String.format("jdbc:mux://(127.0.0.1:12345)[keyId01]/%s?characterEncoding=UTF-8&sessionVariables=sql_mode=ANSI_QUOTES&rewriteBatchedStatements=true", database);
-        String connectionStringDb1 = String.format("jdbc:mysql://127.0.0.1:20306/%s?characterEncoding=UTF-8&sessionVariables=sql_mode=ANSI_QUOTES&rewriteBatchedStatements=true", database);
-        String showTableResultPrefix =
-                "CREATE TABLE \"contacts\" (\n" +
-                        " \"contact_id\" int NOT NULL,\n" +
-                        " \"first_name\" varchar(255) NOT NULL,\n" +
-                        " \"last_name\" varchar(255) NOT NULL,\n" +
-                        " \"email\" varchar(255) NOT NULL,\n" +
-                        " \"phone\" varchar(255) NOT NULL,";
-        //-----create table---------------------------------------------------------------------------------------------
-        create_table: {
-            Connection connection = DriverManager.getConnection(connectionString, username, password);
-            executeSqlNoReturn(connection, "drop table if exists contacts;", true);
-            executeSqlNoReturn(
-                    connection,
-                    "CREATE TABLE contacts (\n" +
-                            "\tcontact_id integer primary key,\n" +
-                            "\tfirst_name varchar(255) not null,\n" +
-                            "\tlast_name varchar(255) not null,\n" +
-                            "\temail varchar(255) not null unique,\n" +
-                            "\tphone varchar(255) not null unique\n" +
-                            ");",
-                    true
-            );
-            connection.commit();
-            connection.close();
-        }
-        //-----verify table creation------------------------------------------------------------------------------------
-        verify_table_creation: {
-            Connection connection = DriverManager.getConnection(connectionStringDb1, username, password);
-            Statement statement = connection.createStatement();
-            ResultSet resultSet = statement.executeQuery("show create table contacts;");
-            assertTrue(resultSet.next());
-            String readTableName = resultSet.getString(1);
-            assertEquals(tableName, readTableName);
-            String readDdl = resultSet.getString(2);
-            assertTrue(
-                    StringUtils.collapseWhitespace(readDdl).toLowerCase(Locale.ROOT)
-                            .startsWith(StringUtils.collapseWhitespace(showTableResultPrefix).toLowerCase(Locale.ROOT))
-            );
-            resultSet.close();
-            statement.close();
-            connection.close();
-        }
-        //-----cleanup table--------------------------------------------------------------------------------------------
-        cleanup_table: {
-            Connection connection = DriverManager.getConnection(connectionString, username, password);
-            executeSqlNoReturn(connection, "drop table if exists contacts;", false);
-            connection.commit();
-            connection.close();
-        }
-    }
-
-    /**
-     * executeUpdate(String sql)
-     * executeQuery(String sql)
+     * executeUpdate()
+     * executeQuery()
      * modify table
      * insert data into table
      * update data
@@ -189,7 +122,7 @@ public class MuxNoopAnalyzerStatementTest {
         //-----create table---------------------------------------------------------------------------------------------
         create_table: {
             Connection connection = DriverManager.getConnection(connectionString, username, password);
-            executeSqlNoReturn(connection, "drop table if exists contacts;", false);
+            executeSqlNoReturn(connection, "drop table if exists contacts;");
             executeSqlNoReturn(
                     connection,
                     "CREATE TABLE contacts (\n" +
@@ -198,8 +131,7 @@ public class MuxNoopAnalyzerStatementTest {
                             "\tlast_name varchar(255) not null,\n" +
                             "\temail varchar(255) not null unique,\n" +
                             "\tphone varchar(255) not null unique\n" +
-                            ");",
-                    false
+                            ");"
             );
             connection.commit();
             connection.close();
@@ -207,8 +139,8 @@ public class MuxNoopAnalyzerStatementTest {
         //-----modify table---------------------------------------------------------------------------------------------
         modify_table: {
             Connection connection = DriverManager.getConnection(connectionString, username, password);
-            executeSqlNoReturn(connection,"alter table contacts drop column phone, drop column email;", false);
-            executeSqlNoReturn(connection,"alter table contacts add column contact_str varchar(50);", false);
+            executeSqlNoReturn(connection,"alter table contacts drop column phone, drop column email;");
+            executeSqlNoReturn(connection,"alter table contacts add column contact_str varchar(50);");
             connection.commit();
             connection.close();
         }
@@ -226,18 +158,19 @@ public class MuxNoopAnalyzerStatementTest {
         //-----insert data into table-----------------------------------------------------------------------------------
         insert_data_into_table: {
             Connection connection = DriverManager.getConnection(connectionString, username, password);
-            String fmt = "       (%d, '%s', '%s', '%s'),\n";
-            String base = "insert into contacts(contact_id, first_name, last_name, contact_str)\n" +
-                    "values\n";
-            StringBuilder builder = new StringBuilder().append(base);
             for (Object[] value : toBeInsertedObjects) {
-                builder.append(String.format(fmt, value[0], value[1], value[2], value[3]));
+                PreparedStatement statement = connection.prepareStatement(
+                        "insert into contacts(contact_id, first_name, last_name, contact_str) values (?, ?, ?, ?);"
+                );
+                statement.setInt(1, (Integer) value[0]);
+                statement.setString(2, (String) value[1]);
+                statement.setString(3, (String) value[2]);
+                statement.setString(4, (String) value[3]);
+                int affected = statement.executeUpdate();
+                assertEquals(1, affected);
+                statement.close();
             }
-            String insertSqlStr = builder.toString();
-            insertSqlStr = insertSqlStr.substring(0, insertSqlStr.length() - 2) + ";"; // replace ',\n' to ';' in the end
-            int affected = executeUpdateSqlNoReturn(connection, insertSqlStr);
             connection.commit(); // commit after insert
-            assertEquals(toBeInsertedCount, affected);
             connection.close();
         }
         //-----read data from table-------------------------------------------------------------------------------------
@@ -262,20 +195,26 @@ public class MuxNoopAnalyzerStatementTest {
             statement.close();
             connection.close();
         }
+        //-----update data and verify-----------------------------------------------------------------------------------
         update_data_and_verify: {
             Connection connection = DriverManager.getConnection(connectionString, username, password);
+            PreparedStatement updateStatement = connection.prepareStatement(
+                    "update contacts set first_name = ? where contact_id >= ?;"
+            );
             final String updatedInfo = RandomStringUtils.random(16);
+            updateStatement.setString(1, updatedInfo);
             final int updateFromIdx = (int) toBeInsertedObjects[random.nextInt(toBeInsertedCount)][0];
-            String updateSqlStr = String.format("update contacts set first_name = '%s' where contact_id >= %d;", updatedInfo, updateFromIdx);
-            Statement updateStatement = connection.createStatement();
-            int affected = updateStatement.executeUpdate(updateSqlStr);
+            updateStatement.setInt(2, updateFromIdx);
+            int affected = updateStatement.executeUpdate();
             assertEquals(toBeInsertedCount - updateFromIdx, affected);
             updateStatement.close();
             connection.commit();
-            String querySqlStr = String.format("select * from contacts where contact_id >= %d;", updateFromIdx);
-            Statement queryStatement = connection.createStatement();
+            PreparedStatement queryStatement = connection.prepareStatement(
+                    "select * from contacts where contact_id >= ?;"
+            );
+            queryStatement.setInt(1, updateFromIdx);
             int count = 0;
-            try (ResultSet resultSet = queryStatement.executeQuery(querySqlStr)) {
+            try (ResultSet resultSet = queryStatement.executeQuery()) {
                 while (resultSet.next()) {
                     String firstName = resultSet.getString(2);
                     assertEquals(updatedInfo, firstName);
@@ -289,7 +228,7 @@ public class MuxNoopAnalyzerStatementTest {
         //-----cleanup table--------------------------------------------------------------------------------------------
         cleanup_table: {
             Connection connection = DriverManager.getConnection(connectionString, username, password);
-            executeSqlNoReturn(connection, "drop table if exists contacts;", false);
+            executeSqlNoReturn(connection, "drop table if exists contacts;");
             connection.commit();
             connection.close();
         }

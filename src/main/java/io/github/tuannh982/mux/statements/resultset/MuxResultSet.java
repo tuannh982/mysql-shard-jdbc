@@ -21,11 +21,11 @@ public class MuxResultSet implements ResultSet {
     private volatile boolean isClosed;
     private volatile boolean isBeginToReadResultSet;
     //
-    private int fetchDirection;
-    private int fetchSize;
-    private int resultSetType;
-    private int resultSetConcurrency;
-    private int resultSetHoldability = HOLD_CURSORS_OVER_COMMIT;
+    private int fetchDirection = ResultSet.FETCH_FORWARD;
+    private int fetchSize = 0;
+    private int resultSetType = ResultSet.TYPE_FORWARD_ONLY;
+    private int resultSetConcurrency = ResultSet.CONCUR_READ_ONLY;
+    private int resultSetHoldability = ResultSet.HOLD_CURSORS_OVER_COMMIT;
     //
     private final AtomicInteger currentRow;
     private ResultSetMetaData metadata;
@@ -59,17 +59,28 @@ public class MuxResultSet implements ResultSet {
     }
 
     private void updateResultSetData() throws SQLException {
-        for (int i = 1; i < resultSets.size(); i++) {
-            if (resultSets.get(i - 1).getType() != resultSets.get(i).getType()) {
-                throw new SQLException("Different ResultSetType configuration error occurred");
+        try {
+            for (int i = 1; i < resultSets.size(); i++) {
+                if (resultSets.get(i - 1).getFetchDirection() != resultSets.get(i).getFetchDirection()) {
+                    throw new SQLException("Different ResultSetFetchDirection configuration error occurred");
+                }
+                if (resultSets.get(i - 1).getType() != resultSets.get(i).getType()) {
+                    throw new SQLException("Different ResultSetType configuration error occurred");
+                }
+                if (resultSets.get(i - 1).getConcurrency() != resultSets.get(i).getConcurrency()) {
+                    throw new SQLException("Different ResultSetConcurrency configuration error occurred");
+                }
+                if (resultSets.get(i - 1).getHoldability() != resultSets.get(i).getHoldability()) {
+                    throw new SQLException("Different ResultSetHoldability configuration error occurred");
+                }
             }
-            if (resultSets.get(i - 1).getConcurrency() != resultSets.get(i).getConcurrency()) {
-                throw new SQLException("Different ResultSetConcurrency configuration error occurred");
-            }
+            fetchDirection = resultSets.get(0).getFetchDirection();
+            resultSetType = resultSets.get(0).getType();
+            resultSetConcurrency = resultSets.get(0).getConcurrency();
+            resultSetHoldability = resultSets.get(0).getHoldability();
+        } catch (SQLFeatureNotSupportedException ignored) {
+            /* ignored */
         }
-        resultSetType = resultSets.get(0).getType();
-        resultSetConcurrency = resultSets.get(0).getConcurrency();
-        resultSetHoldability = resultSets.get(0).getHoldability();
     }
 
     @Override
@@ -1059,25 +1070,21 @@ public class MuxResultSet implements ResultSet {
     @Override
     public void insertRow() throws SQLException {
         currentResultSet.insertRow();
-        updateResultSetData();
     }
 
     @Override
     public void updateRow() throws SQLException {
         currentResultSet.updateRow();
-        updateResultSetData();
     }
 
     @Override
     public void deleteRow() throws SQLException {
         currentResultSet.deleteRow();
-        updateResultSetData();
     }
 
     @Override
     public void refreshRow() throws SQLException {
         currentResultSet.refreshRow();
-        updateResultSetData();
     }
 
     @Override

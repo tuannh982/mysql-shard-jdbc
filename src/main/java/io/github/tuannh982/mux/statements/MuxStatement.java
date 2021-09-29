@@ -98,7 +98,7 @@ public class MuxStatement implements Statement {
             for (Map.Entry<Integer, Statement> entry : statements.entrySet()) {
                 int index = entry.getKey();
                 Statement statement = entry.getValue();
-                statement.executeQuery(analyzedResult.get(index).getA0());
+                resultSets.add(statement.executeQuery(analyzedResult.get(index).getA0()));
             }
             resultSet = new MuxResultSet(this, resultSets);
             return resultSet;
