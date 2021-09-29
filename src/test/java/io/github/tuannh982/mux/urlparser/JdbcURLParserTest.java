@@ -7,9 +7,9 @@ import java.sql.SQLException;
 import static org.junit.jupiter.api.Assertions.*;
 
 @SuppressWarnings("java:S5786")
-public class ParserUtilsTest {
+public class JdbcURLParserTest {
     @Test
-    public void testParse0() throws SQLException {
+    public void testParseConnectionString() throws SQLException {
         String url = "jdbc:mux://(127.0.0.1:12345)[keyId01]/test_database?characterEncoding=UTF-8&sessionVariables=sql_mode=ANSI_QUOTES&rewriteBatchedStatements=true";
         ParsedUrl parsedUrl = ParserUtils.parse(url, null);
         assertNotNull(parsedUrl);

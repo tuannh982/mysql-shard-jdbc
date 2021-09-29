@@ -73,6 +73,7 @@
             <artifactId>commons-lang3</artifactId>
             <version>3.12.0</version>
         </dependency>
+        <!-- test dependencies -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
@@ -107,6 +108,12 @@
             <groupId>com.palantir.docker.compose</groupId>
             <artifactId>docker-compose-junit-jupiter</artifactId>
             <version>1.7.0</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.palantir.conjure.java.runtime</groupId>
+            <artifactId>conjure-java-jackson-serialization</artifactId>
+            <version>7.11.0</version>
             <scope>test</scope>
         </dependency>
         <dependency>
