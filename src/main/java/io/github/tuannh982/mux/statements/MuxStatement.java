@@ -5,9 +5,9 @@ import io.github.tuannh982.mux.connection.Constants;
 import io.github.tuannh982.mux.connection.MuxConnection;
 import io.github.tuannh982.mux.shard.analyzer.Analyzer;
 import io.github.tuannh982.mux.shard.shardops.ShardOps;
-import io.github.tuannh982.mux.statements.history.MethodInvocationEntry;
-import io.github.tuannh982.mux.statements.history.PreparedStatementMethodInvocation;
-import io.github.tuannh982.mux.statements.history.StatementMethodInvocation;
+import io.github.tuannh982.mux.statements.invocation.MethodInvocationEntry;
+import io.github.tuannh982.mux.statements.invocation.PreparedStatementMethodInvocation;
+import io.github.tuannh982.mux.statements.invocation.StatementMethodInvocation;
 import io.github.tuannh982.mux.statements.resultset.MuxResultSet;
 
 import java.sql.*;

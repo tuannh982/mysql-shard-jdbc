@@ -1,6 +1,6 @@
 package io.github.tuannh982.mux.statements;
 
-import io.github.tuannh982.mux.statements.history.MethodInvocation;
+import io.github.tuannh982.mux.statements.invocation.MethodInvocation;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 

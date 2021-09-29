@@ -1,4 +1,4 @@
-package io.github.tuannh982.mux.statements.history;
+package io.github.tuannh982.mux.statements.invocation;
 
 import io.github.tuannh982.mux.statements.MuxPreparedStatementMethodInvocation;
 import lombok.Getter;

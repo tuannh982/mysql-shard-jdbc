@@ -8,7 +8,7 @@ import io.github.tuannh982.mux.shard.analyzer.Analyzer;
 import io.github.tuannh982.mux.shard.analyzer.AnalyzerFactory;
 import io.github.tuannh982.mux.shard.shardops.Murmur3Hash;
 import io.github.tuannh982.mux.shard.shardops.ShardOps;
-import io.github.tuannh982.mux.statements.history.PreparedStatementMethodInvocation;
+import io.github.tuannh982.mux.statements.invocation.PreparedStatementMethodInvocation;
 import io.github.tuannh982.mux.urlparser.ParsedUrl;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
