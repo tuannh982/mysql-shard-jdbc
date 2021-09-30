@@ -5,7 +5,6 @@ import io.github.tuannh982.mux.config.ShardConfig;
 import io.github.tuannh982.mux.config.ShardConfigStore;
 import io.github.tuannh982.mux.config.ShardConfigStoreFactory;
 import io.github.tuannh982.mux.shard.analyzer.Analyzer;
-import io.github.tuannh982.mux.shard.analyzer.AnalyzerFactory;
 import io.github.tuannh982.mux.shard.shardops.Murmur3Hash;
 import io.github.tuannh982.mux.shard.shardops.ShardOps;
 import io.github.tuannh982.mux.statements.invocation.PreparedStatementMethodInvocation;
@@ -23,6 +22,7 @@ import static io.github.tuannh982.mux.connection.Constants.*;
 @Slf4j
 public class MuxConnectionInternal {
     private final ReentrantLock lock;
+    private final String schema;
     private final EnumMap<ConnectionProperties, Object> connectionProperties;
     private final ShardConfigStore shardConfigStore;
     private final ShardConfig shardConfig;
@@ -55,6 +55,7 @@ public class MuxConnectionInternal {
                 username,
                 password
         );
+        this.schema = parsedUrl.getDatabase();
         this.shardConfig = this.shardConfigStore.fetchConfig();
         this.connections = new Connection[shardConfig.getPhysNodeCount()];
         for (int i = 0; i < shardConfig.getPhysNodeCount(); i++) {
@@ -72,6 +73,7 @@ public class MuxConnectionInternal {
         this.shardOps = new ShardOps(
                 shardConfig.getPhysNodeCount(),
                 shardConfig.getPhysNodeShardRanges(),
+                shardConfig.getTableShardConfigs(),
                 new Murmur3Hash()
         );
         log.debug("---------CONNECTION INFO--------");
@@ -86,6 +88,11 @@ public class MuxConnectionInternal {
         log.debug("properties=" + parsedUrl.getProperties().toString());
         log.debug("table shard config=" + Arrays.toString(shardConfig.getTableShardConfigs()));
         log.debug("--------------------------------");
+    }
+
+    // to not confused with getSchema()
+    public String getCurrentSchema() {
+        return schema;
     }
 
     private void setDefaultConnectionPropertyValues() throws SQLException {

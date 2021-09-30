@@ -31,12 +31,13 @@ import static io.github.tuannh982.mux.connection.Constants.*;
 public class SimpleRoutingAnalyzer implements Analyzer {
     @Override
     public Map<Integer, Tuple2<String, PreparedStatementMethodInvocation>> analyze(
+            String schema,
             String sql,
             PreparedStatementMethodInvocation preparedMethodInvocation,
             ShardOps shardOps
     ) throws SQLException {
         Statement statement = parse(sql);
-        return handle(sql, statement, preparedMethodInvocation, shardOps);
+        return handleStatement(schema, sql, statement, preparedMethodInvocation, shardOps);
     }
 
     private Statement parse(String sql) throws SQLException {
@@ -56,7 +57,9 @@ public class SimpleRoutingAnalyzer implements Analyzer {
         }
     }
 
-    private Map<Integer, Tuple2<String, PreparedStatementMethodInvocation>> handle(
+    @SuppressWarnings("java:S3776")
+    private Map<Integer, Tuple2<String, PreparedStatementMethodInvocation>> handleStatement(
+            String schema,
             String originalSql,
             Statement statement,
             PreparedStatementMethodInvocation preparedMethodInvocation,
@@ -71,26 +74,28 @@ public class SimpleRoutingAnalyzer implements Analyzer {
                 statement instanceof Upsert         ||
                 statement instanceof Replace
         ) {
-            SomeStatementAnalyzer statementAnalyzer = new SomeStatementAnalyzer();
+            SimpleRoutingStatementAnalyzer statementAnalyzer = new SimpleRoutingStatementAnalyzer(
+                    schema,
+                    statement,
+                    shardOps
+            );
             if (preparedMethodInvocation != null) { // is prepared statement
                 statementAnalyzer.fillingParameters(preparedMethodInvocation.getValueMap());
             }
-            statementAnalyzer.analyze(statement);
+            statementAnalyzer.analyze();
             Set<Integer> involvedShards = statementAnalyzer.extractInvolvedShards();
             /* not contains any JOIN or sub SELECT (sub SELECT might be equals to JOIN in some cases) */
             if (!statementAnalyzer.containsJoin() && !statementAnalyzer.containsSubQuery()) {
                 if (involvedShards.isEmpty()) { /* forward sql to all shards */
                     return forwardToAllShards(originalSql, preparedMethodInvocation, shardOps);
                 } else if (involvedShards.size() == 1) { /* this sql will be executed on 1 shard */
-                    // TODO
-                    return null;
+                    return forwardToOneShard(originalSql, preparedMethodInvocation, involvedShards.iterator().next());
                 } else {
                     throw new SQLException("Cross shard statement detected, statement = \n" + originalSql);
                 }
             } else { /* this sql will be executed on at most 1 shard*/
-                if (involvedShards.isEmpty()) { /* this sql will be executed on 1 shard */
-                    // TODO
-                    return null;
+                if (involvedShards.size() == 1) { /* this sql will be executed on 1 shard */
+                    return forwardToOneShard(originalSql, preparedMethodInvocation, involvedShards.iterator().next());
                 } else {
                     throw new SQLException("Cross shard statement detected, statement = \n" + originalSql);
                 }

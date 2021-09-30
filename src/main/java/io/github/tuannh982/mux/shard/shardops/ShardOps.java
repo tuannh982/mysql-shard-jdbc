@@ -12,13 +12,15 @@ public class ShardOps {
 
     private final int physNodeCount;
     private final ShardConfig.Range[] physNodeShardRanges;
+    private final ShardConfig.TableConfig[] tableShardConfigs;
     private final Hash hash;
     // for range search
     private final TreeMap<Long, Integer> invertedSortedMapIndex;
 
-    public ShardOps(int physNodeCount, ShardConfig.Range[] physNodeShardRanges, Hash hash) {
+    public ShardOps(int physNodeCount, ShardConfig.Range[] physNodeShardRanges, ShardConfig.TableConfig[] tableShardConfigs, Hash hash) {
         this.physNodeCount = physNodeCount;
         this.physNodeShardRanges = physNodeShardRanges;
+        this.tableShardConfigs = tableShardConfigs;
         this.hash = hash;
         this.invertedSortedMapIndex = new TreeMap<>();
         for (int i = 0; i < this.physNodeCount; i++) {

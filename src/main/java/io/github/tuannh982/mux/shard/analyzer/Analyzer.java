@@ -9,6 +9,7 @@ import java.util.Map;
 
 public interface Analyzer {
     Map<Integer, Tuple2<String, PreparedStatementMethodInvocation>> analyze(
+            String schema,
             String sql,
             PreparedStatementMethodInvocation preparedMethodInvocation,
             ShardOps shardOps

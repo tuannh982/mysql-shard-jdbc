@@ -282,7 +282,7 @@ public class MuxPreparedStatement extends MuxStatement implements PreparedStatem
     public ResultSet executeQuery() throws SQLException {
         synchronized (this) {
             Map<Integer, Tuple2<String, PreparedStatementMethodInvocation>> analyzedResult =
-                    analyzer.analyze(sql, methodInvocationState, shardOps);
+                    analyzer.analyze(schema, sql, methodInvocationState, shardOps);
             preparedStatementPreparation(analyzedResult);
             playback();
             List<ResultSet> resultSets = new ArrayList<>(analyzedResult.size());
@@ -302,7 +302,7 @@ public class MuxPreparedStatement extends MuxStatement implements PreparedStatem
     public int executeUpdate() throws SQLException {
         synchronized (this) {
             Map<Integer, Tuple2<String, PreparedStatementMethodInvocation>> analyzedResult =
-                    analyzer.analyze(sql, methodInvocationState, shardOps);
+                    analyzer.analyze(schema, sql, methodInvocationState, shardOps);
             preparedStatementPreparation(analyzedResult);
             playback();
             int affected = 0;
@@ -322,7 +322,7 @@ public class MuxPreparedStatement extends MuxStatement implements PreparedStatem
     public boolean execute() throws SQLException {
         synchronized (this) {
             Map<Integer, Tuple2<String, PreparedStatementMethodInvocation>> analyzedResult =
-                    analyzer.analyze(sql, methodInvocationState, shardOps);
+                    analyzer.analyze(schema, sql, methodInvocationState, shardOps);
             preparedStatementPreparation(analyzedResult);
             playback();
             boolean ret = false;

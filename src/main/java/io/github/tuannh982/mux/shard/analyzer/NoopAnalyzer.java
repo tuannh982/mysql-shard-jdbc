@@ -10,6 +10,7 @@ import java.util.Map;
 public class NoopAnalyzer implements Analyzer {
     @Override
     public Map<Integer, Tuple2<String, PreparedStatementMethodInvocation>> analyze(
+            String schema,
             String sql,
             PreparedStatementMethodInvocation preparedMethodInvocation,
             ShardOps shardOps
