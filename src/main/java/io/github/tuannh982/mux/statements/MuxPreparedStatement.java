@@ -1,6 +1,7 @@
 package io.github.tuannh982.mux.statements;
 
 import io.github.tuannh982.mux.commons.binary.ByteUtils;
+import io.github.tuannh982.mux.commons.binary.TypeConverter;
 import io.github.tuannh982.mux.commons.io.IOUtils;
 import io.github.tuannh982.mux.commons.tuple.Tuple2;
 import io.github.tuannh982.mux.connection.MuxConnection;
@@ -706,132 +707,7 @@ public class MuxPreparedStatement extends MuxStatement implements PreparedStatem
 
     @SuppressWarnings({"java:S1144", "java:S3776"})
     private void internalSetObject(int i, Object o) throws SQLException {
-        if (o == null) {
-            methodInvocationState.getValueMap().put(i, null);
-        } else if (o instanceof Boolean) {
-            Boolean b = (Boolean) o;
-            methodInvocationState.getValueMap().put(i, new byte[] {(byte) (Boolean.TRUE.equals(b) ? 1 : 0)});
-        } else if (o instanceof Byte) {
-            Byte b = (Byte) o;
-            methodInvocationState.getValueMap().put(i, new byte[] {b});
-        } else if (o instanceof Short) {
-            Short i1 = (Short) o;
-            byte[] bArr = new byte[Short.BYTES];
-            ByteUtils.writeShort(bArr, 0, i1);
-            methodInvocationState.getValueMap().put(i, bArr);
-        } else if (o instanceof Integer) {
-            Integer i1 = (Integer) o;
-            byte[] bArr = new byte[Integer.BYTES];
-            ByteUtils.writeInt(bArr, 0, i1);
-            methodInvocationState.getValueMap().put(i, bArr);
-        } else if (o instanceof Long) {
-            Long l = (Long) o;
-            byte[] bArr = new byte[Long.BYTES];
-            ByteUtils.writeLong(bArr, 0, l);
-            methodInvocationState.getValueMap().put(i, bArr);
-        } else if (o instanceof Float) {
-            Float v = (Float) o;
-            int intValue = Float.floatToIntBits(v);
-            byte[] bArr = new byte[Integer.BYTES];
-            ByteUtils.writeInt(bArr, 0, intValue);
-            methodInvocationState.getValueMap().put(i, bArr);
-        } else if (o instanceof Double) {
-            Double v = (Double) o;
-            long longValue = Double.doubleToLongBits(v);
-            byte[] bArr = new byte[Long.BYTES];
-            ByteUtils.writeLong(bArr, 0, longValue);
-            methodInvocationState.getValueMap().put(i, bArr);
-        } else if (o instanceof BigDecimal) {
-            BigDecimal bigDecimal = (BigDecimal) o;
-            byte[] bArr = bigDecimal.unscaledValue().toByteArray();
-            methodInvocationState.getValueMap().put(i, bArr);
-        } else if (o instanceof String) {
-            String s = (String) o;
-            methodInvocationState.getValueMap().put(i, s.getBytes(StandardCharsets.UTF_8));
-        } else if (o instanceof byte[]) {
-            byte[] bytes = (byte[]) o;
-            methodInvocationState.getValueMap().put(i, bytes);
-        } else if (o instanceof Date) {
-            Date date = (Date) o;
-            long ts = date.getTime();
-            byte[] bArr = new byte[Long.BYTES];
-            ByteUtils.writeLong(bArr, 0, ts);
-            methodInvocationState.getValueMap().put(i, bArr);
-        } else if (o instanceof Time) {
-            Time date = (Time) o;
-            long ts = date.getTime();
-            byte[] bArr = new byte[Long.BYTES];
-            ByteUtils.writeLong(bArr, 0, ts);
-            methodInvocationState.getValueMap().put(i, bArr);
-        } else if (o instanceof Timestamp) {
-            Timestamp date = (Timestamp) o;
-            long ts = date.getTime();
-            byte[] bArr = new byte[Long.BYTES];
-            ByteUtils.writeLong(bArr, 0, ts);
-            methodInvocationState.getValueMap().put(i, bArr);
-        } else if (o instanceof InputStream) {
-            try {
-                InputStream inputStream = (InputStream) o;
-                byte[] bArr = IOUtils.streamToBytes(inputStream);
-                methodInvocationState.getValueMap().put(i, bArr);
-            } catch (IOException e) {
-                throw new SQLException(e);
-            }
-        } else if (o instanceof Reader) {
-            try {
-                Reader reader = (Reader) o;
-                byte[] bArr = IOUtils.readerToBytes(reader);
-                methodInvocationState.getValueMap().put(i, bArr);
-            } catch (IOException e) {
-                throw new SQLException(e);
-            }
-        } else if (o instanceof Ref) {
-            // will not be supported
-            throw new SQLException(OPERATION_NOT_SUPPORTED);
-        } else if (o instanceof Blob) {
-            try {
-                Blob blob = (Blob) o;
-                byte[] bArr = IOUtils.streamToBytes(blob.getBinaryStream(), blob.length());
-                methodInvocationState.getValueMap().put(i, bArr);
-            } catch (IOException e) {
-                throw new SQLException(e);
-            }
-        } else if (o instanceof NClob) {
-            try {
-                NClob clob = (NClob) o;
-                byte[] bArr = IOUtils.readerToBytes(clob.getCharacterStream(), clob.length());
-                methodInvocationState.getValueMap().put(i, bArr);
-            } catch (IOException e) {
-                throw new SQLException(e);
-            }
-        } else if (o instanceof Clob) {
-            try {
-                Clob clob = (Clob) o;
-                byte[] bArr = IOUtils.readerToBytes(clob.getCharacterStream(), clob.length());
-                methodInvocationState.getValueMap().put(i, bArr);
-            } catch (IOException e) {
-                throw new SQLException(e);
-            }
-        } else if (o instanceof Array) {
-            // will not be supported
-            throw new SQLException(OPERATION_NOT_SUPPORTED);
-        } else if (o instanceof URL) {
-            URL url = (URL) o;
-            methodInvocationState.getValueMap().put(i, url.toString().getBytes(StandardCharsets.UTF_8));
-        } else if (o instanceof RowId) {
-            // will not be supported
-            throw new SQLException(OPERATION_NOT_SUPPORTED);
-        } else if (o instanceof SQLXML) {
-            try {
-                SQLXML sqlxml = (SQLXML) o;
-                byte[] bArr = IOUtils.readerToBytes(sqlxml.getCharacterStream());
-                methodInvocationState.getValueMap().put(i, bArr);
-            } catch (IOException e) {
-                throw new SQLException(e);
-            }
-        } else {
-            throw new SQLException(OPERATION_NOT_SUPPORTED);
-        }
+        methodInvocationState.getValueMap().put(i, TypeConverter.SQLTypeToBytes(o));
     }
     //-------------------------
     @Override
