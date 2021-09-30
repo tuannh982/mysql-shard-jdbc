@@ -10,7 +10,7 @@ public class SimpleRoutingStatementAnalyzer {
     private final String schema;
     private final Statement statement;
     private final ShardOps shardOps;
-    private final SimpleRoutingStatementVisitor visitor = null;
+    private final SimpleRoutingStatementVisitor visitor;
 
     public SimpleRoutingStatementAnalyzer(String schema, Statement statement, ShardOps shardOps) {
         this.schema = schema;
@@ -20,7 +20,7 @@ public class SimpleRoutingStatementAnalyzer {
     }
 
     public void analyze() {
-        visitor.visit(statement);
+        statement.accept(visitor);
     }
 
     public void fillingParameters(Map<Integer,byte[]> valueMap) {
