@@ -1,5 +1,6 @@
 package io.github.tuannh982.mux.shard.analyzer;
 
+import io.github.tuannh982.mux.shard.analyzer.simplerouting.SimpleRoutingAnalyzer;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 
