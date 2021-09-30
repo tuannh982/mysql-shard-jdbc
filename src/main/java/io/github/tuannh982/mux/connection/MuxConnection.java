@@ -14,11 +14,9 @@ import java.util.concurrent.locks.ReentrantLock;
 public class MuxConnection implements Connection {
     @Getter
     private final MuxConnectionInternal internal;
-    private final ReentrantLock lock;
 
     private MuxConnection(MuxConnectionInternal internal, ReentrantLock lock) {
         this.internal = internal;
-        this.lock = lock;
     }
 
     public static MuxConnection newConnection(ParsedUrl parsedUrl) throws SQLException {
@@ -307,12 +305,12 @@ public class MuxConnection implements Connection {
 
     @Override
     public SQLWarning getWarnings() throws SQLException {
-        return null; // TODO
+        return internal.getWarnings();
     }
 
     @Override
     public void clearWarnings() throws SQLException {
-        // TODO
+        internal.clearWarnings();
     }
 
     // Wrapper class methods

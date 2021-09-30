@@ -1,6 +1,8 @@
 package io.github.tuannh982.mux;
 
 import io.github.tuannh982.mux.connection.MuxConnection;
+import io.github.tuannh982.mux.shard.analyzer.Analyzer;
+import io.github.tuannh982.mux.shard.analyzer.AnalyzerFactory;
 import io.github.tuannh982.mux.urlparser.ParsedUrl;
 import io.github.tuannh982.mux.urlparser.ParserUtils;
 
@@ -12,6 +14,7 @@ import java.util.logging.Logger;
 public class Driver implements java.sql.Driver {
     private static final Driver INSTANCE = new Driver();
     private static volatile boolean registered = false;
+    private static Analyzer sqlAnalyzer = AnalyzerFactory.defaultAnalyzer();
 
     static {
         try {
@@ -19,6 +22,16 @@ public class Driver implements java.sql.Driver {
         } catch (SQLException e) {
             throw new AssertionError(e);
         }
+    }
+
+    public static synchronized void changeAnalyzer(Analyzer changed) {
+        if (changed != null) {
+            sqlAnalyzer = changed;
+        }
+    }
+
+    public static Analyzer getSqlAnalyzer() {
+        return sqlAnalyzer;
     }
 
     @SuppressWarnings("UnusedReturnValue")

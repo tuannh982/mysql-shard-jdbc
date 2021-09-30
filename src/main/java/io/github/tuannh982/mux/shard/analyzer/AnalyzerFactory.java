@@ -6,8 +6,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class AnalyzerFactory {
     public static Analyzer defaultAnalyzer() {
-        // TODO
-        return null;
+        return new SimpleRoutingAnalyzer();
     }
 
     public static Analyzer noop() {

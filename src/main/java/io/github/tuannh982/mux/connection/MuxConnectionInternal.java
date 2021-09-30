@@ -30,6 +30,7 @@ public class MuxConnectionInternal {
     private volatile boolean isClosed = false;
     // transaction
     private String transactionIdentifier = null;
+
     private enum TransactionState {
         INITIALIZED,
         STARTED,
@@ -67,7 +68,7 @@ public class MuxConnectionInternal {
         }
         setAutoCommit(false);
         setDefaultConnectionPropertyValues();
-        this.analyzer = AnalyzerFactory.defaultAnalyzer();
+        this.analyzer = io.github.tuannh982.mux.Driver.getSqlAnalyzer();
         this.shardOps = new ShardOps(
                 shardConfig.getPhysNodeCount(),
                 shardConfig.getPhysNodeShardRanges(),
@@ -434,5 +435,26 @@ public class MuxConnectionInternal {
     public DatabaseMetaData getMetaData() {
         // TODO
         return null;
+    }
+
+    public SQLWarning getWarnings() throws SQLException {
+        SQLWarning first = null;
+        SQLWarning last = null;
+        for (Connection connection : connections) {
+            SQLWarning warning = connection.getWarnings();
+            if (first == null) {
+                first = warning;
+            } else {
+                last.setNextWarning(warning);
+            }
+            last = warning;
+        }
+        return first;
+    }
+
+    public void clearWarnings() throws SQLException {
+        for (Connection connection : connections) {
+            connection.clearWarnings();
+        }
     }
 }

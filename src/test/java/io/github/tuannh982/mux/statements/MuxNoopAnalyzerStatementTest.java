@@ -28,7 +28,6 @@ import static org.mockito.ArgumentMatchers.any;
 public class MuxNoopAnalyzerStatementTest {
     private static final Random random = new Random();
     private static MockedStatic<ShardConfigStoreFactory> mockedShardConfigStoreFactory;
-    private static MockedStatic<AnalyzerFactory> mockedAnalyzerFactory;
     private static String database;
     private static String username;
     private static String password;
@@ -89,8 +88,7 @@ public class MuxNoopAnalyzerStatementTest {
                 );
             }
         });
-        mockedAnalyzerFactory = Mockito.mockStatic(AnalyzerFactory.class);
-        mockedAnalyzerFactory.when(AnalyzerFactory::defaultAnalyzer).thenReturn(new NoopAnalyzer());
+        io.github.tuannh982.mux.Driver.changeAnalyzer(new NoopAnalyzer());
         database = "test_database";
         username = "test_user";
         password = "test_password";
@@ -99,7 +97,6 @@ public class MuxNoopAnalyzerStatementTest {
     @AfterAll
     public static void cleanup() {
         mockedShardConfigStoreFactory.close();
-        mockedAnalyzerFactory.close();
     }
 
     private void executeSqlNoReturn(Connection connection, String sql, boolean check) throws SQLException {
@@ -239,12 +236,15 @@ public class MuxNoopAnalyzerStatementTest {
         //-----insert data into table-----------------------------------------------------------------------------------
         {
             Connection connection = DriverManager.getConnection(connectionString, username, password);
-            String fmt = "       (%d, '%s', '%s', '%s'),\n";
             String base = "insert into contacts(contact_id, first_name, last_name, contact_str)\n" +
                     "values\n";
             StringBuilder builder = new StringBuilder().append(base);
             for (Object[] value : toBeInsertedObjects) {
-                builder.append(String.format(fmt, value[0], value[1], value[2], value[3]));
+                builder
+                        .append("       (").append(value[0]).append(", '")
+                        .append(value[1]).append("', '")
+                        .append(value[2]).append("', '")
+                        .append(value[3]).append("'),\n");
             }
             String insertSqlStr = builder.toString();
             insertSqlStr = insertSqlStr.substring(0, insertSqlStr.length() - 2) + ";"; // replace ',\n' to ';' in the end

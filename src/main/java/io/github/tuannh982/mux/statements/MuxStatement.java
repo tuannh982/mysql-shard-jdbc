@@ -13,6 +13,7 @@ import io.github.tuannh982.mux.statements.resultset.MuxResultSet;
 import java.sql.*;
 import java.util.*;
 
+import static io.github.tuannh982.mux.connection.Constants.OPERATION_NOT_SUPPORTED;
 import static io.github.tuannh982.mux.connection.Constants.UNINITIALIZED_VARIABLE;
 import static io.github.tuannh982.mux.statements.MuxStatementMethodInvocation.*;
 
@@ -249,17 +250,23 @@ public class MuxStatement implements Statement {
 
     @Override
     public boolean getMoreResults() throws SQLException {
-        return false; // TODO
+        // TODO support later
+        throw new SQLException(OPERATION_NOT_SUPPORTED);
     }
 
     @Override
     public boolean getMoreResults(int current) throws SQLException {
-        return false; // TODO
+        // TODO support later
+        throw new SQLException(OPERATION_NOT_SUPPORTED);
     }
 
     @Override
     public ResultSet getGeneratedKeys() throws SQLException {
-        return null; // TODO
+        List<ResultSet> resultSets = new ArrayList<>();
+        for (Statement statement : statements.values()) {
+            resultSets.add(statement.getGeneratedKeys());
+        }
+        return new MuxResultSet(this, resultSets);
     }
     //-------------------------
 
@@ -502,12 +509,25 @@ public class MuxStatement implements Statement {
 
     @Override
     public SQLWarning getWarnings() throws SQLException {
-        return null; // TODO
+        SQLWarning first = null;
+        SQLWarning last = null;
+        for (Statement statement : statements.values()) {
+            SQLWarning warning = statement.getWarnings();
+            if (first == null) {
+                first = warning;
+            } else {
+                last.setNextWarning(warning);
+            }
+            last = warning;
+        }
+        return first;
     }
 
     @Override
     public void clearWarnings() throws SQLException {
-        // TODO
+        for (Statement statement : statements.values()) {
+            statement.clearWarnings();
+        }
     }
 
     // Wrapper class methods

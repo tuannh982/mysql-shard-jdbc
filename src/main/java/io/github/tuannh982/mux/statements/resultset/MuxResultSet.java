@@ -929,12 +929,25 @@ public class MuxResultSet implements ResultSet {
 
     @Override
     public SQLWarning getWarnings() throws SQLException {
-        return this.statement.getWarnings();
+        SQLWarning first = null;
+        SQLWarning last = null;
+        for (ResultSet resultSet : resultSets) {
+            SQLWarning warning = resultSet.getWarnings();
+            if (first == null) {
+                first = warning;
+            } else {
+                last.setNextWarning(warning);
+            }
+            last = warning;
+        }
+        return first;
     }
 
     @Override
     public void clearWarnings() throws SQLException {
-        this.statement.clearWarnings();
+        for (ResultSet resultSet : resultSets) {
+            resultSet.clearWarnings();
+        }
     }
 
     @Override
