@@ -3,8 +3,7 @@ package io.github.tuannh982.mux.shard.shardops;
 import io.github.tuannh982.mux.config.ShardConfig;
 import lombok.Getter;
 
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.*;
 
 @Getter
 public class ShardOps {
@@ -12,7 +11,7 @@ public class ShardOps {
 
     private final int physNodeCount;
     private final ShardConfig.Range[] physNodeShardRanges;
-    private final ShardConfig.TableConfig[] tableShardConfigs;
+    private final Set<ShardConfig.TableConfig> tableShardConfigs;
     private final Hash hash;
     // for range search
     private final TreeMap<Long, Integer> invertedSortedMapIndex;
@@ -20,7 +19,8 @@ public class ShardOps {
     public ShardOps(int physNodeCount, ShardConfig.Range[] physNodeShardRanges, ShardConfig.TableConfig[] tableShardConfigs, Hash hash) {
         this.physNodeCount = physNodeCount;
         this.physNodeShardRanges = physNodeShardRanges;
-        this.tableShardConfigs = tableShardConfigs;
+        this.tableShardConfigs = new HashSet<>();
+        Collections.addAll(this.tableShardConfigs, tableShardConfigs);
         this.hash = hash;
         this.invertedSortedMapIndex = new TreeMap<>();
         for (int i = 0; i < this.physNodeCount; i++) {

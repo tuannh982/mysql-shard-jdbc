@@ -7,6 +7,10 @@ import org.apache.commons.lang3.StringUtils;
 
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class TableContextUtils {
+    public static String extractSchema(Table table, String schema) {
+        return StringUtils.isBlank(table.getSchemaName()) ? schema : table.getSchemaName().toLowerCase();
+    }
+
     public static String getFullTableName(Table table, String schema, boolean includeAlias) {
         StringBuilder ret = new StringBuilder();
         ret.append(StringUtils.isBlank(table.getSchemaName()) ? schema : table.getSchemaName().toLowerCase());

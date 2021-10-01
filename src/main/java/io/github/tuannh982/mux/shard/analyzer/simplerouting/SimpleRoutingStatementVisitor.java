@@ -53,7 +53,7 @@ public class SimpleRoutingStatementVisitor implements
     private final SimpleRoutingStatementAnalyzer analyzer;
     private boolean containsJoin = false;
     private boolean containsSubQuery = false;
-    private boolean usingValue = false;
+    private boolean usingValues = false;
 
     public boolean containsJoin() {
         return containsJoin;
@@ -63,8 +63,8 @@ public class SimpleRoutingStatementVisitor implements
         return containsSubQuery;
     }
 
-    public boolean usingValue() {
-        return usingValue;
+    public boolean usingValues() {
+        return usingValues;
     }
 
     public SimpleRoutingStatementVisitor(SimpleRoutingStatementAnalyzer analyzer) {
@@ -743,8 +743,8 @@ public class SimpleRoutingStatementVisitor implements
         if (cols != null) {
             ItemsList items = insert.getItemsList();
             if (items instanceof ExpressionList) {
-                if (!usingValue) {
-                    usingValue = true;
+                if (insert.isUseValues()) {
+                    usingValues = true;
                 }
                 visitColumnsAssignmentExpression(cols, (ExpressionList) items);
             } else if (items instanceof MultiExpressionList) {
@@ -772,8 +772,8 @@ public class SimpleRoutingStatementVisitor implements
         if (cols != null) {
             ItemsList items = replace.getItemsList();
             if (items instanceof ExpressionList) {
-                if (!usingValue) {
-                    usingValue = true;
+                if (replace.isUseValues()) {
+                    usingValues = true;
                 }
                 visitColumnsAssignmentExpression(cols, (ExpressionList) items);
             } else if (items instanceof MultiExpressionList) {
@@ -892,8 +892,8 @@ public class SimpleRoutingStatementVisitor implements
         if (cols != null) {
             ItemsList items = upsert.getItemsList();
             if (items instanceof ExpressionList) {
-                if (!usingValue) {
-                    usingValue = true;
+                if (upsert.isUseValues()) {
+                    usingValues = true;
                 }
                 visitColumnsAssignmentExpression(cols, (ExpressionList) items);
             } else if (items instanceof MultiExpressionList) {

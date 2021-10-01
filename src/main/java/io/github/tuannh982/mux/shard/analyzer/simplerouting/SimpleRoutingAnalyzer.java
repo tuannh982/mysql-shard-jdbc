@@ -85,20 +85,39 @@ public class SimpleRoutingAnalyzer implements Analyzer {
             }
             statementAnalyzer.analyze();
             Set<Integer> involvedShards = statementAnalyzer.extractInvolvedShards();
-            /* not contains any JOIN or sub SELECT (sub SELECT might be equals to JOIN in some cases) */
-            if (!statementAnalyzer.containsJoin() && !statementAnalyzer.containsSubQuery()) {
-                if (involvedShards.isEmpty()) { /* forward sql to all shards */
-                    return forwardToAllShards(originalSql, preparedMethodInvocation, shardOps);
-                } else if (involvedShards.size() == 1) { /* this sql will be executed on 1 shard */
-                    return forwardToOneShard(originalSql, preparedMethodInvocation, involvedShards.iterator().next());
-                } else {
-                    throw new SQLException("Cross shard statement detected, statement = \n" + originalSql);
+            if (
+                    statement instanceof Delete         ||
+                    statement instanceof Update         ||
+                    statement instanceof Select         ||
+                    statement instanceof Merge
+            ) {
+                /* not contains any JOIN or sub SELECT (sub SELECT might be equals to JOIN in some cases) */
+                if (!statementAnalyzer.containsJoin() && !statementAnalyzer.containsSubQuery()) {
+                    if (involvedShards.isEmpty()) { /* forward sql to all shards */
+                        return forwardToAllShards(originalSql, preparedMethodInvocation, shardOps);
+                    } else if (involvedShards.size() == 1) { /* this sql will be executed on 1 shard */
+                        return forwardToOneShard(originalSql, preparedMethodInvocation, involvedShards.iterator().next());
+                    } else {
+                        throw new SQLException("Cross shard statement detected, statement = \n" + originalSql);
+                    }
+                } else { /* this sql will be executed on at most 1 shard*/
+                    if (involvedShards.size() == 1) { /* this sql will be executed on 1 shard */
+                        return forwardToOneShard(originalSql, preparedMethodInvocation, involvedShards.iterator().next());
+                    } else {
+                        throw new SQLException("Cross shard statement detected, statement = \n" + originalSql);
+                    }
                 }
-            } else { /* this sql will be executed on at most 1 shard*/
-                if (involvedShards.size() == 1) { /* this sql will be executed on 1 shard */
-                    return forwardToOneShard(originalSql, preparedMethodInvocation, involvedShards.iterator().next());
+            } else {
+                if (statementAnalyzer.usingValues()) { /* using VALUES */
+                    if (involvedShards.isEmpty()) { /* forward sql to all shards */
+                        return forwardToAllShards(originalSql, preparedMethodInvocation, shardOps);
+                    } else if (involvedShards.size() == 1) { /* this sql will be executed on 1 shard */
+                        return forwardToOneShard(originalSql, preparedMethodInvocation, involvedShards.iterator().next());
+                    } else {
+                        throw new SQLException("Cross shard statement detected, statement = \n" + originalSql);
+                    }
                 } else {
-                    throw new SQLException("Cross shard statement detected, statement = \n" + originalSql);
+                    throw new SQLException(OPERATION_NOT_SUPPORTED);
                 }
             }
         } else if (
