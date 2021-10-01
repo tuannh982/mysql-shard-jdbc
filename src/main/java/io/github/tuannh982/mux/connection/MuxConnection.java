@@ -1,5 +1,6 @@
 package io.github.tuannh982.mux.connection;
 
+import io.github.tuannh982.mux.ErrorMessages;
 import io.github.tuannh982.mux.statements.MuxPreparedStatement;
 import io.github.tuannh982.mux.statements.MuxStatement;
 import io.github.tuannh982.mux.urlparser.ParsedUrl;
@@ -78,26 +79,26 @@ public class MuxConnection implements Connection {
     @Override
     public CallableStatement prepareCall(String sql) throws SQLException {
         // will not be supported
-        throw new SQLException(Constants.OPERATION_NOT_SUPPORTED);
+        throw new SQLException(ErrorMessages.OPERATION_NOT_SUPPORTED);
     }
 
     @Override
     public CallableStatement prepareCall(String sql, int resultSetType, int resultSetConcurrency) throws SQLException {
         // will not be supported
-        throw new SQLException(Constants.OPERATION_NOT_SUPPORTED);
+        throw new SQLException(ErrorMessages.OPERATION_NOT_SUPPORTED);
     }
 
     @Override
     public CallableStatement prepareCall(String sql, int resultSetType, int resultSetConcurrency, int resultSetHoldability) throws SQLException {
         // will not be supported
-        throw new SQLException(Constants.OPERATION_NOT_SUPPORTED);
+        throw new SQLException(ErrorMessages.OPERATION_NOT_SUPPORTED);
     }
     //-------------------------
 
     @Override
     public String nativeSQL(String sql) throws SQLException {
         // TODO support later
-        throw new SQLException(Constants.OPERATION_NOT_SUPPORTED);
+        throw new SQLException(ErrorMessages.OPERATION_NOT_SUPPORTED);
     }
 
     //-------------------------
@@ -235,67 +236,67 @@ public class MuxConnection implements Connection {
     @Override
     public Savepoint setSavepoint() throws SQLException {
         // README will not support savepoint
-        throw new SQLException(Constants.OPERATION_NOT_SUPPORTED);
+        throw new SQLException(ErrorMessages.OPERATION_NOT_SUPPORTED);
     }
 
     @Override
     public Savepoint setSavepoint(String s) throws SQLException {
         // README will not support savepoint
-        throw new SQLException(Constants.OPERATION_NOT_SUPPORTED);
+        throw new SQLException(ErrorMessages.OPERATION_NOT_SUPPORTED);
     }
 
     @Override
     public void rollback(Savepoint savepoint) throws SQLException {
         // README will not support savepoint
-        throw new SQLException(Constants.OPERATION_NOT_SUPPORTED);
+        throw new SQLException(ErrorMessages.OPERATION_NOT_SUPPORTED);
     }
 
     @Override
     public void releaseSavepoint(Savepoint savepoint) throws SQLException {
         // README will not support savepoint
-        throw new SQLException(Constants.OPERATION_NOT_SUPPORTED);
+        throw new SQLException(ErrorMessages.OPERATION_NOT_SUPPORTED);
     }
 
     @Override
     public Clob createClob() throws SQLException {
         // TODO support later
-        throw new SQLException(Constants.OPERATION_NOT_SUPPORTED);
+        throw new SQLException(ErrorMessages.OPERATION_NOT_SUPPORTED);
     }
 
     @Override
     public Blob createBlob() throws SQLException {
         // TODO support later
-        throw new SQLException(Constants.OPERATION_NOT_SUPPORTED);
+        throw new SQLException(ErrorMessages.OPERATION_NOT_SUPPORTED);
     }
 
     @Override
     public NClob createNClob() throws SQLException {
         // TODO support later
-        throw new SQLException(Constants.OPERATION_NOT_SUPPORTED);
+        throw new SQLException(ErrorMessages.OPERATION_NOT_SUPPORTED);
     }
 
     @Override
     public SQLXML createSQLXML() throws SQLException {
         // TODO support later
-        throw new SQLException(Constants.OPERATION_NOT_SUPPORTED);
+        throw new SQLException(ErrorMessages.OPERATION_NOT_SUPPORTED);
     }
 
     @Override
     public Struct createStruct(String s, Object[] objects) throws SQLException {
         // TODO support later
-        throw new SQLException(Constants.OPERATION_NOT_SUPPORTED);
+        throw new SQLException(ErrorMessages.OPERATION_NOT_SUPPORTED);
     }
 
     @Override
     public Array createArrayOf(String s, Object[] objects) throws SQLException {
         // TODO support later
-        throw new SQLException(Constants.OPERATION_NOT_SUPPORTED);
+        throw new SQLException(ErrorMessages.OPERATION_NOT_SUPPORTED);
     }
 
     @Override
     public boolean isValid(int i) throws SQLException {
         // TODO support later
-        throw new SQLException(Constants.OPERATION_NOT_SUPPORTED);
+        throw new SQLException(ErrorMessages.OPERATION_NOT_SUPPORTED);
     }
 
     @Override

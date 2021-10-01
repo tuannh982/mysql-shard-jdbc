@@ -12,7 +12,7 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.sql.*;
 
-import static io.github.tuannh982.mux.connection.Constants.OPERATION_NOT_SUPPORTED;
+import static io.github.tuannh982.mux.ErrorMessages.*;
 
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class TypeConverter {

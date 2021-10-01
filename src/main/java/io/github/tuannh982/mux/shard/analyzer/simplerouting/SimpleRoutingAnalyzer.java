@@ -26,7 +26,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-import static io.github.tuannh982.mux.connection.Constants.*;
+import static io.github.tuannh982.mux.ErrorMessages.*;
+import static io.github.tuannh982.mux.shard.analyzer.ErrorMessages.*;
 
 public class SimpleRoutingAnalyzer implements Analyzer {
     @Override

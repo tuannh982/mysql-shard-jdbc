@@ -1,7 +1,6 @@
 package io.github.tuannh982.mux.statements;
 
 import io.github.tuannh982.mux.commons.tuple.Tuple2;
-import io.github.tuannh982.mux.connection.Constants;
 import io.github.tuannh982.mux.connection.MuxConnection;
 import io.github.tuannh982.mux.shard.analyzer.Analyzer;
 import io.github.tuannh982.mux.shard.shardops.ShardOps;
@@ -13,8 +12,7 @@ import io.github.tuannh982.mux.statements.resultset.MuxResultSet;
 import java.sql.*;
 import java.util.*;
 
-import static io.github.tuannh982.mux.connection.Constants.OPERATION_NOT_SUPPORTED;
-import static io.github.tuannh982.mux.connection.Constants.UNINITIALIZED_VARIABLE;
+import static io.github.tuannh982.mux.ErrorMessages.*;
 import static io.github.tuannh982.mux.statements.MuxStatementMethodInvocation.*;
 
 @SuppressWarnings("DuplicatedCode")
@@ -494,19 +492,19 @@ public class MuxStatement implements Statement {
     @Override
     public void addBatch(String sql) throws SQLException {
         // TODO support later
-        throw new SQLException(Constants.OPERATION_NOT_SUPPORTED);
+        throw new SQLException(OPERATION_NOT_SUPPORTED);
     }
 
     @Override
     public void clearBatch() throws SQLException {
         // will not be supported
-        throw new SQLException(Constants.OPERATION_NOT_SUPPORTED);
+        throw new SQLException(OPERATION_NOT_SUPPORTED);
     }
 
     @Override
     public int[] executeBatch() throws SQLException {
         // will not be supported
-        throw new SQLException(Constants.OPERATION_NOT_SUPPORTED);
+        throw new SQLException(OPERATION_NOT_SUPPORTED);
     }
 
     @Override

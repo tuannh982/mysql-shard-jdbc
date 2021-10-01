@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static io.github.tuannh982.mux.connection.Constants.OPERATION_NOT_SUPPORTED;
+import static io.github.tuannh982.mux.ErrorMessages.*;
 
 public class MuxResultSet implements ResultSet {
     private final Statement statement;

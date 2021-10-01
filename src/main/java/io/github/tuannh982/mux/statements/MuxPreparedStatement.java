@@ -1,6 +1,5 @@
 package io.github.tuannh982.mux.statements;
 
-import io.github.tuannh982.mux.commons.binary.ByteUtils;
 import io.github.tuannh982.mux.commons.binary.TypeConverter;
 import io.github.tuannh982.mux.commons.io.IOUtils;
 import io.github.tuannh982.mux.commons.tuple.Tuple2;
@@ -14,14 +13,13 @@ import java.io.InputStream;
 import java.io.Reader;
 import java.math.BigDecimal;
 import java.net.URL;
-import java.nio.charset.StandardCharsets;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Map;
 
-import static io.github.tuannh982.mux.connection.Constants.OPERATION_NOT_SUPPORTED;
+import static io.github.tuannh982.mux.ErrorMessages.*;
 import static io.github.tuannh982.mux.statements.MuxPreparedStatementMethodInvocation.*;
 
 public class MuxPreparedStatement extends MuxStatement implements PreparedStatement {

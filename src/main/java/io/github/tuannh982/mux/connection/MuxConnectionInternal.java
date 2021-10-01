@@ -17,7 +17,7 @@ import java.util.*;
 import java.util.concurrent.Executor;
 import java.util.concurrent.locks.ReentrantLock;
 
-import static io.github.tuannh982.mux.connection.Constants.*;
+import static io.github.tuannh982.mux.ErrorMessages.*;
 
 @Slf4j
 public class MuxConnectionInternal {
